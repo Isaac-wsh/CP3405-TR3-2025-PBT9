@@ -1,0 +1,1 @@
+This is our SmartSeat project for Sprint 1
