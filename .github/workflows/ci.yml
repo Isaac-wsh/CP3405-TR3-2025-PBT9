@@ -13,11 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 可选的小检查：确保 README 存在（没有也会给出清晰报错）
       - name: Verify README exists
         run: |
           test -f README.md && echo "README found ✅" || (echo "README.md missing ❌"; exit 1)
 
-      # 保底通过的“Hello CI”步骤（只回显一句话，不会失败）
+
       - name: Hello CI
         run: echo "CI is set up and working!"
