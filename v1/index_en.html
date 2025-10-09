@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seat Occupancy · MVP</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; max-width: 920px; margin: 24px auto; padding: 0 16px;}
+    h1 { margin-bottom: 0.2rem; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hint { color: #555; font-size: 0.95rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    #preview, #annot { max-width: 100%; border-radius: 8px; display: none; border: 2px solid #e33; }
+    #result { white-space: pre-wrap; }
+    button { padding: 10px 16px; border-radius: 10px; border: 1px solid #aaa; background: #f7f7f7; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .sep { height: 1px; background: #eee; margin: 12px 0; }
+    .cols { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } }
+    .ok { color: #0a7; font-weight: 600; }
+    .bad { color: #d33; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Seat Occupancy · MVP</h1>
+  <div class="hint">Upload an image → YOLOv8 on the backend → JSON result. Enable "Save annotated image" to preview the boxed result.</div>
+
+  <div class="card">
+    <div class="row">
+      <input type="file" id="fileInput" accept="image/*" />
+      <select id="mode">
+        <option value="simple">Simple detection (occupied / vacant)</option>
+        <option value="map" selected>With seat mapping (per-seat occupancy)</option>
+      </select>
+      <label><input type="checkbox" id="saveChk" checked /> Save annotated image</label>
+      <input type="text" id="baseUrl" size="36" placeholder="Backend URL, default http://127.0.0.1:8000" />
+      <button id="btn" onclick="upload()">Run detection</button>
+    </div>
+    <div class="sep"></div>
+    <div class="cols">
+      <div>
+        <img id="preview" />
+        <div class="hint">Original preview</div>
+      </div>
+      <div>
+        <img id="annot" />
+        <div class="hint">Annotated result (if saved)</div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div id="status" class="hint"></div>
+    <pre id="result"></pre>
+  </div>
+
+  <div class="card">
+    <h3>How to use</h3>
+    <ol>
+      <li>Start backend: <span class="mono">py backend.py</span> (or <span class="mono">python backend.py</span>)</li>
+      <li>Open this file (double-click <span class="mono">index_en.html</span>) in your browser.</li>
+      <li>Pick an image and click <em>Run detection</em>. For seat mapping, edit <span class="mono">seat_map.json</span> to fit your camera view (normalized 0..1 rectangles).</li>
+    </ol>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const img = $("preview");
+    const annot = $("annot");
+    const statusEl = $("status");
+    const resultEl = $("result");
+
+    function setBusy(b) { $("btn").disabled = b; }
+
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      img.style.display = "block";
+      annot.style.display = "none";
+      annot.src = "";
+      statusEl.textContent = "";
+      resultEl.textContent = "";
+    };
+
+    async function upload() {
+      const file = fileInput.files[0];
+      if (!file) { alert("Please choose an image first."); return; }
+      const base = $("baseUrl").value.trim() || "http://127.0.0.1:8000";
+      const mode = $("mode").value;
+      const save = $("saveChk").checked ? "1" : "0";
+      const endpoint = mode === "map" ? "/api/check_map" : "/api/check_seat";
+
+      const form = new FormData();
+      form.append("file", file);
+
+      setBusy(true);
+      statusEl.textContent = "⌛ Running...";
+      resultEl.textContent = "";
+      annot.style.display = "none";
+      annot.src = "";
+
+      try {
+        const res = await fetch(base + endpoint + "?save=" + save, { method: "POST", body: form });
+        const data = await res.json();
+        statusEl.textContent = "✅ Done";
+        resultEl.textContent = JSON.stringify(data, null, 2);
+
+        if (data.annotated_url) {
+          annot.src = (base.replace(/\/$/, "")) + data.annotated_url;
+          annot.style.display = "block";
+        }
+      } catch (e) {
+        statusEl.textContent = "❌ Request failed: " + e;
+      } finally {
+        setBusy(false);
+      }
+    }
+  </script>
+</body>
+</html>
