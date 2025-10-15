@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Seat Finder – Prototype Web</title>
+<style>
+  :root{
+    --bg:#0b111b; --card:#121a27; --muted:#9fb0c7; --text:#eaf2ff;
+    --primary:#4da3ff; --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+    --accent:#8b5cf6; --border:#1f2a3a; --chip:#1b2535; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;color:var(--text);
+    background: radial-gradient(1200px 600px at 20% -10%, #0d1522 20%, transparent 60%) ,
+               radial-gradient(1000px 500px at 120% 10%, #0d1522 10%, transparent 60%), var(--bg);}
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);
+    background-color:rgba(10,16,25,.75);backdrop-filter:blur(8px)}
+  .brand{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.3px}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 16px rgba(77,163,255,.6)}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .tab{border:1px solid var(--border);background:var(--chip);color:var(--text);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px}
+  .tab.active{background:linear-gradient(135deg,#123154,#1a3f66);border-color:#1f3f66}
+  .container{max-width:1080px;margin:22px auto;padding:0 16px 40px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.0));border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--radius);padding:18px}
+  .grid{display:grid;gap:16px} @media (min-width:900px){.grid-cols-2{grid-template-columns:1.1fr .9fr}}
+  h1{font-size:24px;margin:8px 0 6px} h2{font-size:18px;margin:14px 0 8px;color:var(--muted)} p.muted{color:var(--muted);font-size:14px;margin:2px 0 14px}
+  label{font-size:13px;color:var(--muted);display:block;margin:8px 0 6px}
+  select,input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="time"]{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:#0f1724;color:var(--text);outline:none}
+  .row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1}
+  .btn{appearance:none;border:none;cursor:pointer;padding:10px 14px;border-radius:12px;font-weight:600;color:#0a1220;background:var(--primary)}
+  .btn:disabled{opacity:.6;cursor:not-allowed} .btn.secondary{background:#203048;color:var(--text);border:1px solid var(--border)}
+  .btn.ghost{background:transparent;border:1px dashed var(--border);color:var(--muted)}
+  .btn.ok{background:var(--ok)} .btn.warn{background:var(--warn);color:#102018} .btn.danger{background:var(--danger);color:#fff} .btn.block{width:100%}
+  .right{display:flex;gap:8px;align-items:center}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 8px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--chip);font-size:12px;color:var(--muted)}
+  .dot-seat{width:14px;height:14px;border-radius:4px;border:1px solid #0f1624}
+  .s-avail{background:#16a34a}.s-unavail{background:#b91c1c}.s-select{background:#f59e0b}.s-access{background:linear-gradient(135deg,#4da3ff,#8b5cf6)}
+  .seat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;padding:10px;background:#0f1724;border:1px solid var(--border);border-radius:14px;margin-top:8px}
+  .seat{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;user-select:none;border:1px solid #09111d;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+  .seat.avail{background:#16a34a} .seat.taken{background:#b91c1c;cursor:not-allowed} .seat.selected{background:#f59e0b;color:#0a101a} .seat.access{background:linear-gradient(135deg,#4da3ff,#8b5cf6)}
+  .seat:hover{filter:brightness(1.05)}
+  .footer-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:14px} th{background:#101a2b;color:#bcd0ea} tr:last-child td{border-bottom:none}
+  .status{padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:var(--chip);color:var(--muted)}
+  .status.ok{background:#0d2616;color:#86efac;border-color:#14532d} .status.cancel{background:#2b0f13;color:#fecaca;border-color:#7f1d1d}
+  .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(6,10,18,.6);backdrop-filter:blur(3px);z-index:100}
+  .modal.show{display:grid} .modal .dialog{width:min(520px,92vw);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+  .divider{height:1px;background:var(--border);margin:10px -18px}
+  .toast{position:fixed;right:18px;bottom:18px;background:#0f1724;border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);box-shadow:var(--shadow);display:none;z-index:110}
+  .toast.show{display:block}
+  small.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;background:#0f1724;padding:2px 6px;border-radius:6px;border:1px solid var(--border);color:#bcd0ea}
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span> Seat Finder</div>
+    <nav class="tabs">
+      <button class="tab active" data-view="reserve">Reserve Seat</button>
+      <button class="tab" data-view="myBookings">My Bookings</button>
+      <button class="tab" data-view="account">Account</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Reserve -->
+    <section id="view-reserve" class="grid grid-cols-2">
+      <div class="card">
+        <h1>Reserve Your Seat</h1>
+        <p class="muted">Select the building and room first, then pick a seat from the grid on the right.</p>
+
+        <div class="row">
+          <div>
+            <label>Building</label>
+            <select id="building">
+              <option value="" selected hidden>Select Building</option>
+              <option value="A">Building A</option>
+              <option value="B">Building B</option>
+              <option value="C">Building C</option>
+            </select>
+          </div>
+          <div>
+            <label>Room</label>
+            <select id="room" disabled>
+              <option value="" selected>Please select building first</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Date</label>
+            <input id="date" type="date">
+          </div>
+          <div>
+            <label>Start Time</label>
+            <input id="start" type="time" value="09:00">
+          </div>
+          <div>
+            <label>End Time</label>
+            <input id="end" type="time" value="10:00">
+          </div>
+        </div>
+
+        <h2>Legend</h2>
+        <div class="legend">
+          <span class="chip"><span class="dot-seat s-avail"></span> Available</span>
+          <span class="chip"><span class="dot-seat s-unavail"></span> Unavailable</span>
+          <span class="chip"><span class="dot-seat s-select"></span> Selected</span>
+          <span class="chip"><span class="dot-seat s-access"></span> Accessible</span>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn secondary" id="btn-clear">Clear</button>
+          <button class="btn" id="btn-continue" disabled>Continue</button>
+        </div>
+        <p class="muted" style="margin-top:10px">Backend placeholder: submit seat/time to server for conflict checking later.</p>
+      </div>
+
+      <div class="card">
+        <h1>Select a Seat</h1>
+        <div id="seatGrid" class="seat-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Bookings -->
+    <section id="view-myBookings" class="card" style="display:none">
+      <h1>My Bookings</h1>
+      <p class="muted">You can view, cancel, or check in here.</p>
+      <div id="bookingsEmpty" class="muted" style="display:none">No records.</div>
+      <div style="overflow:auto">
+        <table id="bookingsTable" style="display:none">
+          <thead>
+            <tr>
+              <th>Course / Note</th>
+              <th>Building-Room</th>
+              <th>Seat</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th style="width:240px">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Account -->
+    <section id="view-account" class="grid grid-cols-2" style="display:none">
+      <div class="card" id="card-login">
+        <h1>Login</h1>
+        <p class="muted">Frontend-only placeholder. Replace with real backend auth later (JWT/Session).</p>
+        <label>Email</label>
+        <input id="login-email" type="email" placeholder="you@example.com">
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="••••••••">
+        <div class="footer-actions">
+          <button class="btn" id="btn-login">Login</button>
+          <button class="btn ghost" id="btn-demo">Use Demo Account</button>
+        </div>
+        <p class="muted">API placeholder: <small class="code">POST /auth/login</small></p>
+      </div>
+
+      <div class="card" id="card-profile" style="display:none">
+        <h1>Welcome, <span id="profile-name"></span></h1>
+        <p class="muted">You are logged in. This area can show profile details later.</p>
+        <div class="footer-actions">
+          <button class="btn secondary" id="btn-logout">Logout</button>
+        </div>
+        <p class="muted">API placeholders: <small class="code">POST /auth/logout</small>, <small class="code">GET /me</small></p>
+      </div>
+
+      <div class="card">
+        <h1>Backend Integration Notes</h1>
+        <ul class="muted" style="line-height:1.7">
+          <li>Backend functions live in <small class="code">api.*</small>. Swap localStorage with real requests later.</li>
+          <li>Example: <small class="code">GET /buildings</small>, <small class="code">GET /rooms?building=C</small>, <small class="code">GET /seats?building=C&room=C2-04&date=2025-10-14&start=09:00&end=10:00</small></li>
+          <li>Create/cancel/check-in: <small class="code">POST /reservations</small>, <small class="code">PATCH /reservations/:id/cancel</small>, <small class="code">POST /reservations/:id/checkin</small></li>
+          <li>This prototype stores data in <small class="code">localStorage</small>.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Confirm -->
+  <div id="confirmModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="dialog">
+      <h1 id="confirmTitle">Reservation Details</h1>
+      <div id="confirmBody" class="muted"></div>
+      <div class="divider"></div>
+      <div class="footer-actions">
+        <button class="btn secondary" id="btn-back">Back</button>
+        <button class="btn ok" id="btn-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in -->
+  <div id="checkinModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="checkinTitle">
+    <div class="dialog">
+      <h1 id="checkinTitle">Check-in Successful ✅</h1>
+      <p class="muted">Your arrival has been recorded. Have a great session!</p>
+      <div class="footer-actions">
+        <button class="btn ok" id="btn-checkin-done">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- Mock API (replace with real backend later) ---------- */
+const api = {
+  login: async (email, password) => {
+    if(!email) throw new Error("Please enter your email");
+    const user = { id: 'u_' + btoa(email).slice(0,8), name: email.split('@')[0] || 'User', email };
+    localStorage.setItem('SF_USER', JSON.stringify(user));
+    return user;
+  },
+  logout: async () => localStorage.removeItem('SF_USER'),
+  currentUser: () => JSON.parse(localStorage.getItem('SF_USER') || 'null'),
+
+  listBuildings: async () => ([
+    { id:'A', name:'Building A' },
+    { id:'B', name:'Building B' },
+    { id:'C', name:'Building C' }
+  ]),
+  listRooms: async (buildingId) => {
+    const rooms = {
+      A:['A1-01','A1-02','A2-04'],
+      B:['B1-03','B2-01','B2-04'],
+      C:['C2-01','C2-04','C3-02']
+    };
+    return (rooms[buildingId]||[]).map(r=>({id:r, name:r}));
+  },
+  listSeats: async ({building, room, date, start, end}) => {
+    const key = `${building}-${room}-${date}-${start}-${end}`;
+    const seed = Array.from(key).reduce((a,c)=>a + c.charCodeAt(0), 0);
+    const rows = ['A','B','C','D','E','F','G','H'];
+    const cols = [1,2,3,4,5,6,7,8];
+    const taken = new Set();
+    for(let i=0;i<10;i++){
+      const r = rows[(seed + i*3) % rows.length];
+      const c = cols[(seed*7 + i*5) % cols.length];
+      taken.add(`${r}${c}`);
+    }
+    const access = new Set(['A1','A8','H1','H8']);
+    const seats = [];
+    rows.forEach(r=>{
+      cols.forEach(c=>{
+        const id = `${r}${c}`;
+        seats.push({ id, label:id, status: taken.has(id)?'taken':'avail', accessible: access.has(id) });
+      });
+    });
+    return seats;
+  },
+  listReservations: async (userId) => {
+    const all = JSON.parse(localStorage.getItem('SF_RES') || '[]');
+    return all.filter(r => r.userId === userId);
+  },
+  createReservation: async (payload) => {
+    const all = JSON.parse(localStorage.getItem('SF_RES') || '[]');
+    const item = { id: 'r_'+Date.now(), status:'Booked', ...payload };
+    all.push(item); localStorage.setItem('SF_RES', JSON.stringify(all));
+    return item;
+  },
+  cancelReservation: async (id) => {
+    const all = JSON.parse(localStorage.getItem('SF_RES') || '[]');
+    const idx = all.findIndex(r => r.id === id);
+    if(idx>=0){ all[idx].status='Canceled'; localStorage.setItem('SF_RES', JSON.stringify(all)); return all[idx]; }
+  },
+  checkinReservation: async (id) => {
+    const all = JSON.parse(localStorage.getItem('SF_RES') || '[]');
+    const idx = all.findIndex(r => r.id === id);
+    if(idx>=0){ all[idx].status='Checked-in'; localStorage.setItem('SF_RES', JSON.stringify(all)); return all[idx]; }
+  }
+};
+
+/* ---------- Helpers & State ---------- */
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>document.querySelectorAll(q);
+const state = { selected:{building:'',room:'',date:'',start:'',end:'',seat:null}, seats:[], user: api.currentUser() };
+
+function showToast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2200); }
+
+function switchView(view){
+  ['reserve','myBookings','account'].forEach(v=>{
+    const el = $(`#view-${v}`);
+    el.style.display = (v===view) ? (v==='reserve'?'grid':'block') : 'none';
+  });
+  $$('.tab').forEach(t=>t.classList.toggle('active', t.dataset.view===view));
+  if(view==='myBookings') renderBookings();
+  if(view==='account') renderAccount();
+}
+
+/* ---------- Selectors & Date/Time ---------- */
+async function initSelectors(){
+  const buildingSel = $('#building');
+  const roomSel = $('#room');
+
+  buildingSel.addEventListener('change', async ()=>{
+    const val = buildingSel.value;
+    state.selected.building = val;
+    roomSel.innerHTML = '';
+    roomSel.disabled = !val;
+    if(!val){ roomSel.innerHTML = `<option value="">Please select building first</option>`; return; }
+    const rooms = await api.listRooms(val);
+    roomSel.innerHTML = `<option value="" selected hidden>Select Room</option>` + rooms.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+    state.selected.room='';
+    generateSeats();
+  });
+
+  roomSel.addEventListener('change', ()=>{ state.selected.room = roomSel.value; generateSeats(); });
+
+  const today = new Date();
+  $('#date').value = today.toISOString().slice(0,10);
+  $('#date').addEventListener('change', ()=>{ state.selected.date = $('#date').value; generateSeats(); });
+  $('#start').addEventListener('change', ()=>{ state.selected.start = $('#start').value; generateSeats(); });
+  $('#end').addEventListener('change', ()=>{ state.selected.end = $('#end').value; generateSeats(); });
+
+  state.selected.date = $('#date').value;
+  state.selected.start = $('#start').value;
+  state.selected.end = $('#end').value;
+}
+
+/* ---------- Seat Grid ---------- */
+async function generateSeats(){
+  const grid = $('#seatGrid');
+  grid.innerHTML = '';
+  state.selected.seat = null;
+  $('#btn-continue').disabled = true;
+
+  const {building, room, date, start, end} = state.selected;
+  if(!building || !room || !date || !start || !end){
+    grid.innerHTML = `<div style="grid-column:1/-1; color:var(--muted); padding:10px">Please select building, room and time.</div>`;
+    return;
+  }
+
+  state.seats = await api.listSeats({building, room, date, start, end});
+  state.seats.forEach(s=>{
+    const d = document.createElement('div');
+    d.className = `seat ${s.status==='taken'?'taken':'avail'} ${s.accessible?'access':''}`;
+    d.textContent = s.label; d.title = s.accessible ? `${s.label} (Accessible)` : s.label;
+    d.tabIndex = s.status==='taken' ? -1 : 0;
+
+    function choose(){
+      if(s.status==='taken') return;
+      $$('.seat.selected').forEach(n=>n.classList.remove('selected'));
+      d.classList.add('selected');
+      state.selected.seat = s;
+      $('#btn-continue').disabled = false;
+    }
+    d.addEventListener('click', choose);
+    d.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); choose(); } });
+    grid.appendChild(d);
+  });
+}
+
+function clearSelection(){
+  state.selected.seat = null;
+  $$('.seat.selected').forEach(n=>n.classList.remove('selected'));
+  $('#btn-continue').disabled = true;
+}
+
+/* ---------- Confirm & Create ---------- */
+function openConfirm(){
+  const s = state.selected; if(!s.seat) return;
+  $('#confirmBody').innerHTML = `
+    <div class="row">
+      <div><strong>Building</strong><br>${s.building}</div>
+      <div><strong>Room</strong><br>${s.room}</div>
+      <div><strong>Seat</strong><br>${s.seat.label}</div>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <div><strong>Date</strong><br>${s.date}</div>
+      <div><strong>Start</strong><br>${s.start}</div>
+      <div><strong>End</strong><br>${s.end}</div>
+    </div>
+    <p class="muted" style="margin-top:10px">On real backend, final conflict check & locking happens here.</p>`;
+  $('#confirmModal').classList.add('show');
+}
+function closeConfirm(){ $('#confirmModal').classList.remove('show'); }
+
+async function doCreate(){
+  if(!state.user){ showToast('Please login before booking.'); switchView('account'); closeConfirm(); return; }
+  const s = state.selected;
+  await api.createReservation({
+    userId: state.user.id, building:s.building, room:s.room, seat:s.seat.label,
+    date:s.date, start:s.start, end:s.end, course:'Design Thinking III', note:''
+  });
+  closeConfirm(); showToast('Booked ✅'); switchView('myBookings');
+}
+
+/* ---------- Bookings Table ---------- */
+async function renderBookings(){
+  if(!state.user){
+    $('#bookingsEmpty').style.display='block';
+    $('#bookingsEmpty').textContent='Please login to view your bookings.';
+    $('#bookingsTable').style.display='none';
+    return;
+  }
+  const list = await api.listReservations(state.user.id);
+  const empty = $('#bookingsEmpty'); const table = $('#bookingsTable'); const tbody = table.querySelector('tbody');
+  tbody.innerHTML='';
+
+  if(!list.length){ empty.style.display='block'; empty.textContent='No records.'; table.style.display='none'; return; }
+  empty.style.display='none'; table.style.display='table';
+  list.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
+
+  list.forEach(r=>{
+    const tr = document.createElement('tr');
+    const time = `${r.date} ${r.start}–${r.end}`;
+    const statusCls = r.status==='Canceled' ? 'cancel' : (r.status==='Checked-in'?'ok':'');
+    tr.innerHTML = `
+      <td>${r.course || '-'}</td>
+      <td>${r.building} - ${r.room}</td>
+      <td>${r.seat}</td>
+      <td>${time}</td>
+      <td><span class="status ${statusCls}">${r.status}</span></td>
+      <td>
+        <div class="right">
+          <button class="btn ok" data-act="checkin">Check in</button>
+          <button class="btn danger" data-act="cancel">Cancel</button>
+        </div>
+      </td>`;
+    const [checkBtn, cancelBtn] = tr.querySelectorAll('button');
+    function refreshRow(newR){
+      const chip = tr.querySelector('.status');
+      chip.textContent = newR.status;
+      chip.className = `status ${newR.status==='Canceled'?'cancel':(newR.status==='Checked-in'?'ok':'')}`;
+      if(newR.status!=='Booked'){ checkBtn.disabled=true; cancelBtn.disabled=true; }
+    }
+    checkBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      await api.checkinReservation(r.id);
+      $('#checkinModal').classList.add('show');
+      refreshRow({...r, status:'Checked-in'});
+    });
+    cancelBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      await api.cancelReservation(r.id);
+      showToast('Booking canceled');
+      refreshRow({...r, status:'Canceled'});
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- Account ---------- */
+function renderAccount(){
+  state.user = api.currentUser();
+  const loggedIn = !!state.user;
+  $('#card-login').style.display = loggedIn ? 'none' : 'block';
+  $('#card-profile').style.display = loggedIn ? 'block' : 'none';
+  if(loggedIn){ $('#profile-name').textContent = state.user.name; }
+}
+
+/* ---------- Wire up ---------- */
+document.addEventListener('DOMContentLoaded', async ()=>{
+  $$('.tab').forEach(t=>t.addEventListener('click', ()=>switchView(t.dataset.view)));
+  $('#btn-clear').addEventListener('click', clearSelection);
+  $('#btn-continue').addEventListener('click', openConfirm);
+  $('#btn-back').addEventListener('click', closeConfirm);
+  $('#btn-confirm').addEventListener('click', doCreate);
+  $('#btn-checkin-done').addEventListener('click', ()=>$('#checkinModal').classList.remove('show'));
+
+  $('#btn-login').addEventListener('click', async ()=>{
+    try{
+      const email = $('#login-email').value.trim();
+      const pwd = $('#login-password').value;
+      await api.login(email, pwd);
+      showToast('Logged in'); renderAccount();
+    }catch(e){ showToast(e.message || 'Login failed'); }
+  });
+  $('#btn-demo').addEventListener('click', async ()=>{
+    await api.login('demo@student.jcu.sg', 'demo123');
+    showToast('Logged in as demo'); renderAccount();
+  });
+  $('#btn-logout').addEventListener('click', async ()=>{ await api.logout(); renderAccount(); showToast('Logged out'); });
+
+  await initSelectors();
+  renderAccount();
+  generateSeats();
+});
+
+/* Expose for console test */
+window._api = api;
+</script>
+</body>
+</html>
