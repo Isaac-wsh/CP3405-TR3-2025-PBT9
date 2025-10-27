@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seat Occupancy · MVP</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; max-width: 960px; margin: 24px auto; padding: 0 16px;}
+    h1 { margin-bottom: 0.2rem; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .hint { color: #555; font-size: 0.95rem; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    #preview, #annot { max-width: 100%; border-radius: 8px; display: none; border: 2px solid #e33; }
+    #result { white-space: pre-wrap; }
+    button { padding: 10px 16px; border-radius: 10px; border: 1px solid #aaa; background: #f7f7f7; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    input[type=text], select { padding: 8px 10px; border-radius: 10px; border: 1px solid #aaa;}
+    .sep { height: 1px; background: #eee; margin: 12px 0; }
+    .cols { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1fr 1fr; } }
+    .tag { font-size: 12px; border:1px solid #ddd; padding:2px 6px; border-radius:8px; margin-left:8px;}
+  </style>
+</head>
+<body>
+  <h1>Seat Occupancy · MVP</h1>
+  <div class="hint">Upload an image → YOLOv8 on the backend → JSON result. Enable "Save annotated image" to preview the boxed result.</div>
+
+  <div class="card">
+    <div class="row">
+      <input type="file" id="fileInput" accept="image/*" />
+      <select id="mode">
+        <option value="simple">Simple detection (occupied / vacant)</option>
+        <option value="map" selected>With seat mapping (per-seat occupancy)</option>
+      </select>
+      <label><input type="checkbox" id="saveChk" checked /> Save annotated image</label>
+    </div>
+    <div class="row">
+      <input type="text" id="baseUrl" size="40" placeholder="Backend URL, default http://127.0.0.1:8000" />
+      <input type="text" id="mapName" size="18" placeholder="Seat map name (e.g., room101)" list="mapsList"/>
+      <datalist id="mapsList"></datalist>
+      <button id="refreshMaps">Refresh maps</button>
+      <span class="tag" id="mapsHint">maps: —</span>
+      <button id="btn" onclick="upload()">Run detection</button>
+    </div>
+    <div class="sep"></div>
+    <div class="cols">
+      <div>
+        <img id="preview" />
+        <div class="hint">Original preview</div>
+      </div>
+      <div>
+        <img id="annot" />
+        <div class="hint">Annotated result (if saved)</div>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div id="status" class="hint"></div>
+    <pre id="result"></pre>
+  </div>
+
+  <div class="card">
+    <h3>How to use</h3>
+    <ol>
+      <li>Start backend: <span class="mono">py backend.py</span> (or <span class="mono">python backend.py</span>)</li>
+      <li>Open this file in your browser (double-click <span class="mono">index_en.html</span>).</li>
+      <li>Pick an image and click <em>Run detection</em>. For mapping, enter a <b>Seat map name</b> you've saved via the editor, or pick from the suggestions (Refresh maps).</li>
+    </ol>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const img = $("preview");
+    const annot = $("annot");
+    const statusEl = $("status");
+    const resultEl = $("result");
+    const mapsList = $("mapsList");
+    const mapsHint = $("mapsHint");
+
+    function backend() { return $("baseUrl").value.trim() || "http://127.0.0.1:8000"; }
+
+    function setBusy(b) { $("btn").disabled = b; }
+
+    async function loadMaps() {
+      try {
+        const res = await fetch(backend()+"/api/seatmaps");
+        const data = await res.json();
+        const maps = (data && data.maps) ? data.maps : [];
+        mapsList.innerHTML = "";
+        mapsHint.textContent = "maps: " + (maps.length ? maps.join(", ") : "—");
+        for (const m of maps) {
+          const opt = document.createElement("option");
+          opt.value = m;
+          mapsList.appendChild(opt);
+        }
+        if (maps.length && !$("mapName").value) {
+          $("mapName").value = maps.includes("default") ? "default" : maps[0];
+        }
+      } catch (e) {
+        mapsHint.textContent = "maps: (fetch failed)";
+      }
+    }
+
+    $("refreshMaps").onclick = loadMaps;
+
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      img.style.display = "block";
+      annot.style.display = "none";
+      annot.src = "";
+      statusEl.textContent = "";
+      resultEl.textContent = "";
+    };
+
+    async function upload() {
+      const file = fileInput.files[0];
+      if (!file) { alert("Please choose an image first."); return; }
+      const base = backend();
+      const mode = $("mode").value;
+      const save = $("saveChk").checked ? "1" : "0";
+      const map = $("mapName").value.trim() || "default";
+      const endpoint = mode === "map" ? ("/api/check_map?map=" + encodeURIComponent(map)) : "/api/check_seat";
+
+      const form = new FormData();
+      form.append("file", file);
+
+      setBusy(true);
+      statusEl.textContent = "⌛ Running...";
+      resultEl.textContent = "";
+      annot.style.display = "none";
+      annot.src = "";
+
+      try {
+        const res = await fetch(base + endpoint + (endpoint.includes("?") ? "&" : "?") + "save=" + save, { method: "POST", body: form });
+        const data = await res.json();
+        statusEl.textContent = "✅ Done";
+        resultEl.textContent = JSON.stringify(data, null, 2);
+
+        if (data.annotated_url) {
+          annot.src = (base.replace(/\/$/, "")) + data.annotated_url;
+          annot.style.display = "block";
+        }
+      } catch (e) {
+        statusEl.textContent = "❌ Request failed: " + e;
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    // Try load maps on page open (non-blocking)
+    loadMaps();
+  </script>
+</body>
+</html>
