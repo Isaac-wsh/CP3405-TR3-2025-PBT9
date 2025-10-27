@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seat Map Editor</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; max-width: 980px; margin: 20px auto; padding: 0 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 12px; margin: 12px 0; }
+    canvas { max-width: 100%; border: 2px dashed #888; border-radius: 10px; background: #fafafa; user-select:none; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, "Courier New", monospace; }
+    #img { display: none; }
+    label.btn { border:1px solid #aaa; border-radius:10px; padding:8px 12px; background:#f7f7f7; cursor:pointer;}
+    input[type=text], select { padding:8px 10px; border-radius:10px; border:1px solid #aaa;}
+    button { padding:8px 12px; border-radius:10px; border:1px solid #aaa; background:#f7f7f7; cursor:pointer;}
+    #list { font-size: 0.95rem; }
+    .seat { padding:4px 6px; margin:4px; border-radius:8px; background:#eef; display:inline-block; }
+    small.hint { color:#666; }
+  </style>
+</head>
+<body>
+  <h1>Seat Map Editor</h1>
+  <p>Drag on the canvas to make a selection, then click <em>Add from selection</em>. Press <kbd>Esc</kbd> to cancel a selection.</p>
+
+  <div class="card row">
+    <label class="btn"><input id="file" type="file" accept="image/*" hidden> Load reference image</label>
+    <input id="mapName" type="text" placeholder="map name (default)" />
+    <input id="baseUrl" type="text" size="36" placeholder="Backend URL (default http://127.0.0.1:8000)" />
+    <button id="saveMap">Save map (PUT)</button>
+    <button id="loadMap">Load map (GET)</button>
+    <button id="clear">Clear</button>
+  </div>
+
+  <div class="card">
+    <canvas id="cv" width="960" height="540" tabindex="0"></canvas>
+    <div><small class="hint">Tip: keep the canvas focused and use <kbd>Esc</kbd> to cancel selection.</small></div>
+    <img id="img" />
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <input id="seatId" type="text" placeholder="Seat ID (e.g., R1C1)" />
+      <button id="addSeat">Add from selection</button>
+      <button id="deleteSeat">Delete seat</button>
+      <button id="cancelSel">Cancel selection</button>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const cv = $("cv");
+    const ctx = cv.getContext("2d");
+    const img = $("img");
+
+    const state = {
+      rects: [],             // [{id, rect:[x1,y1,x2,y2]}] normalized
+      dragging: false,       // are we currently dragging a selection
+      start: null,           // [x,y] in canvas px
+      current: null,         // [x,y] in canvas px
+      selection: null,       // {x1,y1,x2,y2} in canvas px (persist after mouseup)
+      image: null
+    };
+
+    function backend() { return $("baseUrl").value.trim() || "http://127.0.0.1:8000"; }
+    function mapName() { return $("mapName").value.trim() || "default"; }
+
+    function draw() {
+      ctx.clearRect(0,0,cv.width, cv.height);
+      if (state.image) ctx.drawImage(state.image, 0, 0, cv.width, cv.height);
+      ctx.lineWidth = 2;
+      // draw existing seats
+      for (const r of state.rects) {
+        ctx.strokeStyle = "#e33";
+        const [x1,y1,x2,y2] = r.rect.map((v,i)=> i%2===0 ? v*cv.width : v*cv.height);
+        ctx.strokeRect(x1,y1,(x2-x1),(y2-y1));
+        ctx.fillStyle = "rgba(227,51,51,0.15)";
+        ctx.fillRect(x1,y1,(x2-x1),(y2-y1));
+        ctx.fillStyle = "#000";
+        ctx.fillText(r.id, x1+4, y1+14);
+      }
+      // draw active drag
+      if (state.dragging && state.start && state.current) {
+        ctx.setLineDash([6,4]);
+        ctx.strokeStyle = "#09f";
+        const [x1,y1] = state.start;
+        const [x2,y2] = state.current;
+        ctx.strokeRect(x1,y1,(x2-x1),(y2-y1));
+        ctx.setLineDash([]);
+      }
+      // draw persisted selection
+      if (!state.dragging && state.selection) {
+        const s = state.selection;
+        ctx.setLineDash([6,4]);
+        ctx.strokeStyle = "#09f";
+        ctx.strokeRect(s.x1, s.y1, (s.x2 - s.x1), (s.y2 - s.y1));
+        ctx.setLineDash([]);
+      }
+    }
+
+    function listSeats() {
+      const box = $("list");
+      box.innerHTML = "";
+      for (const r of state.rects) {
+        const el = document.createElement("span");
+        el.className = "seat";
+        el.textContent = r.id;
+        box.appendChild(el);
+      }
+    }
+
+    function toCanvasPos(evt) {
+      const rect = cv.getBoundingClientRect();
+      return [evt.clientX - rect.left, evt.clientY - rect.top];
+    }
+
+    // Mouse interactions
+    cv.addEventListener("mousedown", e => {
+      cv.focus();
+      state.dragging = true;
+      state.start = toCanvasPos(e);
+      state.current = null;
+      state.selection = null; // reset previous selection
+      draw();
+    });
+    cv.addEventListener("mousemove", e => {
+      if (!state.dragging) return;
+      state.current = toCanvasPos(e);
+      draw();
+    });
+    cv.addEventListener("mouseup", e => {
+      if (!state.dragging) return;
+      state.current = toCanvasPos(e);
+      // persist selection
+      const [x1,y1] = state.start, [x2,y2] = state.current;
+      state.selection = {
+        x1: Math.min(x1,x2),
+        y1: Math.min(y1,y2),
+        x2: Math.max(x1,x2),
+        y2: Math.max(y1,y2)
+      };
+      state.dragging = false;
+      state.start = null;
+      state.current = null;
+      draw();
+    });
+    cv.addEventListener("mouseleave", () => {
+      if (state.dragging) {
+        state.dragging = false;
+        state.start = null;
+        state.current = null;
+        draw();
+      }
+    });
+
+    // Keyboard Esc cancels selection
+    cv.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        state.selection = null;
+        draw();
+      }
+    });
+    $("cancelSel").onclick = () => { state.selection = null; draw(); };
+
+    $("addSeat").onclick = () => {
+      if (!state.selection) return alert("Drag on canvas to select a rectangle first.");
+      const id = $("seatId").value.trim();
+      if (!id) return alert("Enter Seat ID.");
+      const s = state.selection;
+      const nx1 = s.x1 / cv.width, ny1 = s.y1 / cv.height;
+      const nx2 = s.x2 / cv.width, ny2 = s.y2 / cv.height;
+      state.rects.push({id, rect:[nx1,ny1,nx2,ny2]});
+      state.selection = null;
+      $("seatId").value = "";
+      draw(); listSeats();
+    };
+
+    $("deleteSeat").onclick = () => {
+      const id = $("seatId").value.trim();
+      if (!id) return alert("Enter Seat ID to delete.");
+      state.rects = state.rects.filter(r => r.id !== id);
+      $("seatId").value = "";
+      draw(); listSeats();
+    };
+
+    $("file").onchange = () => {
+      const f = $("file").files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      img.onload = () => {
+        const ar = img.naturalWidth / img.naturalHeight;
+        cv.height = 540;
+        cv.width  = Math.round(cv.height * ar);
+        state.image = img;
+        draw();
+      };
+      img.src = url;
+    };
+
+    $("saveMap").onclick = async () => {
+      const body = { seats: state.rects };
+      const res = await fetch((backend()+"/api/seatmap/"+encodeURIComponent(mapName())), {
+        method: "PUT",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      alert("Saved: "+JSON.stringify(data));
+    };
+
+    $("loadMap").onclick = async () => {
+      const res = await fetch(backend()+"/api/seatmap/"+encodeURIComponent(mapName()));
+      if (!res.ok) { alert("Map not found"); return; }
+      const data = await res.json();
+      state.rects = data.seats || [];
+      state.selection = null;
+      draw(); listSeats();
+    };
+
+    $("clear").onclick = () => {
+      state.rects = [];
+      state.selection = null;
+      draw(); listSeats();
+    };
+
+    draw();
+  </script>
+</body>
+</html>
