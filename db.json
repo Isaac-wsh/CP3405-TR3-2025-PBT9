@@ -1,0 +1,652 @@
+{
+  "users": [
+    {
+      "id": "u_ZGVtb0BzdHVk",
+      "email": "demo@student.jcu.sg",
+      "name": "demo"
+    },
+    {
+      "id": "u_amN1QHN0dWQ",
+      "email": "jcu@student.jcu.sg",
+      "name": "jcu"
+    },
+    {
+      "id": "u_c2hpaGVu",
+      "email": "shiheng.wang@my.jcu.edu.au",
+      "name": "shiheng.wang"
+    },
+    {
+      "id": "u_NTg3QG15",
+      "email": "587@my.jcu.edu.au",
+      "name": "587"
+    },
+    {
+      "id": "u_eGlhb2Nh",
+      "email": "xiaocai@my.jcu.edu.au",
+      "name": "xiaocai"
+    },
+    {
+      "id": "u_Ym95dWFu",
+      "email": "boyuan@my.jcu.edu.au",
+      "name": "boyuan"
+    }
+  ],
+  "reservations": [
+    {
+      "id": "r_1730070000000",
+      "userId": "u_ZGVtb0BzdHVk",
+      "userEmail": "demo@student.jcu.sg",
+      "building": "A",
+      "room": "A1-01",
+      "seat": "B3",
+      "date": "2025-10-29",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Booked",
+      "courseCode": null,
+      "createdAt": "2025-10-28T01:11:21Z",
+      "updatedAt": "2025-10-28T01:11:21Z"
+    },
+    {
+      "id": "r_1761615466527",
+      "userId": "u_c2hpaGVu",
+      "building": "A",
+      "room": "A1-02",
+      "seat": "C3",
+      "date": "2025-10-28",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Checked-in",
+      "createdAt": "2025-10-28T01:37:46.527Z",
+      "updatedAt": "2025-10-28T01:38:11.676Z",
+      "userEmail": "shiheng.wang@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761615628075",
+      "userId": "u_NTg3QG15",
+      "building": "C",
+      "room": "C3-02",
+      "seat": "A4",
+      "date": "2025-10-18",
+      "start": "03:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T01:40:28.075Z",
+      "updatedAt": "2025-10-28T01:40:41.515Z",
+      "userEmail": "587@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761618707481",
+      "userId": "u_eGlhb2Nh",
+      "building": "A",
+      "room": "A1-02",
+      "seat": "G6",
+      "date": "2025-10-18",
+      "start": "03:00",
+      "end": "10:00",
+      "status": "Booked",
+      "createdAt": "2025-10-28T02:31:47.481Z",
+      "updatedAt": "2025-10-28T02:31:47.481Z",
+      "userEmail": "xiaocai@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761618710751",
+      "userId": "u_eGlhb2Nh",
+      "building": "A",
+      "room": "A1-02",
+      "seat": "G6",
+      "date": "2025-10-18",
+      "start": "03:00",
+      "end": "10:00",
+      "status": "Booked",
+      "createdAt": "2025-10-28T02:31:50.751Z",
+      "updatedAt": "2025-10-28T02:31:50.751Z",
+      "userEmail": "xiaocai@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761620810398",
+      "userId": "u_Ym95dWFu",
+      "building": "B",
+      "room": "B2-04",
+      "seat": "B2",
+      "date": "2025-10-27",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T03:06:50.398Z",
+      "updatedAt": "2025-10-28T03:12:53.097Z",
+      "userEmail": "boyuan@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761621239631",
+      "userId": "u_Ym95dWFu",
+      "building": "B",
+      "room": "B2-04",
+      "seat": "B3",
+      "date": "2025-10-27",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T03:13:59.631Z",
+      "updatedAt": "2025-10-28T03:44:12.868Z",
+      "userEmail": "boyuan@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761621248127",
+      "userId": "u_Ym95dWFu",
+      "building": "B",
+      "room": "B2-04",
+      "seat": "B3",
+      "date": "2025-10-27",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T03:14:08.127Z",
+      "updatedAt": "2025-10-28T03:44:18.220Z",
+      "userEmail": "boyuan@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761621513320",
+      "userId": "u_NTg3QG15",
+      "building": "C",
+      "room": "C2-01",
+      "seat": "B6",
+      "date": "2025-10-18",
+      "start": "03:00",
+      "end": "10:00",
+      "status": "Checked-in",
+      "createdAt": "2025-10-28T03:18:33.320Z",
+      "updatedAt": "2025-10-28T03:18:47.772Z",
+      "userEmail": "587@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761622906999",
+      "userId": "u_c2hpaGVu",
+      "building": "A",
+      "room": "A2-04",
+      "seat": "B3",
+      "date": "2025-10-27",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T03:41:46.999Z",
+      "updatedAt": "2025-10-28T03:41:56.303Z",
+      "userEmail": "shiheng.wang@my.jcu.edu.au"
+    },
+    {
+      "id": "r_1761623025541",
+      "userId": "u_Ym95dWFu",
+      "building": "B",
+      "room": "B2-01",
+      "seat": "B3",
+      "date": "2025-10-28",
+      "start": "09:00",
+      "end": "10:00",
+      "status": "Canceled",
+      "createdAt": "2025-10-28T03:43:45.541Z",
+      "updatedAt": "2025-10-28T03:44:20.815Z",
+      "userEmail": "boyuan@my.jcu.edu.au"
+    }
+  ],
+  "reservationEvents": [
+    {
+      "id": "e_1",
+      "reservationId": "r_1730070000000",
+      "event": "BOOKED",
+      "at": "2025-10-28T01:11:21Z"
+    },
+    {
+      "id": "8a03",
+      "reservationId": "r_1761615466527",
+      "event": "BOOKED",
+      "at": "2025-10-28T01:37:46.527Z"
+    },
+    {
+      "id": "18b8",
+      "reservationId": "r_1761615466527",
+      "event": "CHECKED_IN",
+      "at": "2025-10-28T01:38:11.676Z"
+    },
+    {
+      "id": "6bc6",
+      "reservationId": "r_1761615628075",
+      "event": "BOOKED",
+      "at": "2025-10-28T01:40:28.075Z"
+    },
+    {
+      "id": "d2ae",
+      "reservationId": "r_1761615628075",
+      "event": "CANCELED",
+      "at": "2025-10-28T01:40:41.515Z"
+    },
+    {
+      "id": "0924",
+      "reservationId": "r_1761618707481",
+      "event": "BOOKED",
+      "at": "2025-10-28T02:31:47.481Z"
+    },
+    {
+      "id": "646b",
+      "reservationId": "r_1761618710751",
+      "event": "BOOKED",
+      "at": "2025-10-28T02:31:50.751Z"
+    },
+    {
+      "id": "e3cb",
+      "reservationId": "r_1761620810398",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:06:50.398Z"
+    },
+    {
+      "id": "2b60",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.233Z"
+    },
+    {
+      "id": "fd75",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.385Z"
+    },
+    {
+      "id": "b156",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:45.794Z"
+    },
+    {
+      "id": "dbdf",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.525Z"
+    },
+    {
+      "id": "8f2f",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.653Z"
+    },
+    {
+      "id": "4c4d",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:51.249Z"
+    },
+    {
+      "id": "dbbd",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:51.361Z"
+    },
+    {
+      "id": "bf72",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:51.508Z"
+    },
+    {
+      "id": "ba99",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:52.081Z"
+    },
+    {
+      "id": "69f8",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:48.630Z"
+    },
+    {
+      "id": "875c",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.785Z"
+    },
+    {
+      "id": "1ab0",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:52.509Z"
+    },
+    {
+      "id": "4d72",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:52.221Z"
+    },
+    {
+      "id": "cb63",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:50.914Z"
+    },
+    {
+      "id": "b415",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:52.809Z"
+    },
+    {
+      "id": "3b2a",
+      "reservationId": "r_1761620810398",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:12:51.109Z"
+    },
+    {
+      "id": "cd17",
+      "reservationId": "r_1761621239631",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:13:59.631Z"
+    },
+    {
+      "id": "03da",
+      "reservationId": "r_1761621248127",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:14:08.127Z"
+    },
+    {
+      "id": "1723",
+      "reservationId": "r_1761621513320",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:18:33.320Z"
+    },
+    {
+      "id": "1740",
+      "reservationId": "r_1761621513320",
+      "event": "CHECKED_IN",
+      "at": "2025-10-28T03:18:47.772Z"
+    },
+    {
+      "id": "e434",
+      "reservationId": "r_1761622906999",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:41:46.999Z"
+    },
+    {
+      "id": "6287",
+      "reservationId": "r_1761622906999",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:41:56.303Z"
+    },
+    {
+      "id": "7cf3",
+      "reservationId": "r_1761623025541",
+      "event": "BOOKED",
+      "at": "2025-10-28T03:43:45.541Z"
+    },
+    {
+      "id": "36d2",
+      "reservationId": "r_1761621239631",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:44:12.868Z"
+    },
+    {
+      "id": "9f46",
+      "reservationId": "r_1761621248127",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:44:18.220Z"
+    },
+    {
+      "id": "36a6",
+      "reservationId": "r_1761623025541",
+      "event": "CANCELED",
+      "at": "2025-10-28T03:44:20.815Z"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "A",
+      "name": "Building A"
+    },
+    {
+      "id": "B",
+      "name": "Building B"
+    },
+    {
+      "id": "C",
+      "name": "Building C"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "A1-01",
+      "buildingId": "A",
+      "name": "A1-01"
+    },
+    {
+      "id": "A1-02",
+      "buildingId": "A",
+      "name": "A1-02"
+    },
+    {
+      "id": "A2-04",
+      "buildingId": "A",
+      "name": "A2-04"
+    },
+    {
+      "id": "B1-03",
+      "buildingId": "B",
+      "name": "B1-03"
+    },
+    {
+      "id": "B2-01",
+      "buildingId": "B",
+      "name": "B2-01"
+    },
+    {
+      "id": "B2-04",
+      "buildingId": "B",
+      "name": "B2-04"
+    },
+    {
+      "id": "C2-01",
+      "buildingId": "C",
+      "name": "C2-01"
+    },
+    {
+      "id": "C2-04",
+      "buildingId": "C",
+      "name": "C2-04"
+    },
+    {
+      "id": "C3-02",
+      "buildingId": "C",
+      "name": "C3-02"
+    }
+  ],
+  "seats": [
+    {
+      "id": "A1-02_C3",
+      "building": "A",
+      "room": "A1-02",
+      "seat": "C3",
+      "status": "booked",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": "u_c2hpaGVu",
+      "updatedAt": "2025-10-28T02:31:47Z",
+      "version": 2
+    },
+    {
+      "id": "A1-02_G6",
+      "building": "A",
+      "room": "A1-02",
+      "seat": "G6",
+      "status": "booked",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": "u_eGlhb2Nh",
+      "updatedAt": "2025-10-28T02:31:50Z",
+      "version": 1
+    },
+    {
+      "id": "B2-04_B4",
+      "room": "B2-04",
+      "building": "B",
+      "seat": "B4",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 2,
+      "updatedAt": "2025-10-28T03:06:31.258Z"
+    },
+    {
+      "id": "B2-04_A3",
+      "room": "B2-04",
+      "building": "B",
+      "seat": "A3",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 1,
+      "updatedAt": "2025-10-28T03:06:18.763Z"
+    },
+    {
+      "id": "B2-04_B2",
+      "room": "B2-04",
+      "building": "B",
+      "seat": "B2",
+      "status": "booked",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": "u_Ym95dWFu",
+      "version": 1,
+      "updatedAt": "2025-10-28T03:06:48.873Z"
+    },
+    {
+      "id": "B2-04_B3",
+      "room": "B2-04",
+      "building": "B",
+      "seat": "B3",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 3,
+      "updatedAt": "2025-10-28T03:44:18.220Z"
+    },
+    {
+      "id": "C2-01_B6",
+      "room": "C2-01",
+      "building": "C",
+      "seat": "B6",
+      "status": "booked",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": "u_NTg3QG15",
+      "version": 1,
+      "updatedAt": "2025-10-28T03:18:31.028Z"
+    },
+    {
+      "id": "B2-01_A1",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "A1",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:20:48.649Z",
+      "bookedBy": null,
+      "version": 0,
+      "updatedAt": "2025-10-28T03:18:49.684Z"
+    },
+    {
+      "id": "B2-01_A1",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "A1",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:20:49.159Z",
+      "bookedBy": null,
+      "version": 0,
+      "updatedAt": "2025-10-28T03:18:52.056Z"
+    },
+    {
+      "id": "B2-01_B2",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "B2",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:20:51.810Z",
+      "bookedBy": null,
+      "version": 0,
+      "updatedAt": "2025-10-28T03:18:54.861Z"
+    },
+    {
+      "id": "B2-01_B2",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "B2",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:20:51.294Z",
+      "bookedBy": null,
+      "version": 0,
+      "updatedAt": "2025-10-28T03:18:54.339Z"
+    },
+    {
+      "id": "B2-01_C3",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "C3",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:21:00.484Z",
+      "bookedBy": null,
+      "version": 1,
+      "updatedAt": "2025-10-28T03:19:03.195Z"
+    },
+    {
+      "id": "A2-04_B3",
+      "room": "A2-04",
+      "building": "A",
+      "seat": "B3",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 1,
+      "updatedAt": "2025-10-28T03:41:56.303Z"
+    },
+    {
+      "id": "B2-01_C4",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "C4",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 1,
+      "updatedAt": "2025-10-28T03:43:29.110Z"
+    },
+    {
+      "id": "B2-01_C4",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "C4",
+      "status": "held",
+      "holdBy": "u_Ym95dWFu",
+      "holdUntil": "2025-10-28T03:45:19.754Z",
+      "bookedBy": null,
+      "version": 0,
+      "updatedAt": "2025-10-28T03:43:20.535Z"
+    },
+    {
+      "id": "B2-01_B3",
+      "room": "B2-01",
+      "building": "B",
+      "seat": "B3",
+      "status": "available",
+      "holdBy": null,
+      "holdUntil": null,
+      "bookedBy": null,
+      "version": 1,
+      "updatedAt": "2025-10-28T03:44:20.815Z"
+    }
+  ]
+}
