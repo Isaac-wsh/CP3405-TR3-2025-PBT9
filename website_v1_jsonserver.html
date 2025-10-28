@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Seat – Login → Reserve → Seats → Bookings</title>
+<style>
+  :root{--bg:#0b111b;--card:#121a27;--muted:#9fb0c7;--text:#eaf2ff;--primary:#4da3ff;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--accent:#8b5cf6;--border:#1f2a3a;--chip:#1b2535;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+    background:radial-gradient(1200px 600px at 20% -10%, #0d1522 20%, transparent 60%),
+               radial-gradient(1000px 500px at 120% 10%, #0d1522 10%, transparent 60%),var(--bg)}
+  .hidden{display:none!important}
+  .container{max-width:1080px;margin:24px auto 48px;padding:0 16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--radius);padding:20px}
+  .grid{display:grid;gap:18px} @media(min-width:900px){.grid-cols-2{grid-template-columns:1.1fr .9fr}}
+  h1{font-size:26px;margin:8px 0 6px} h2{font-size:20px;margin:14px 0 8px;color:var(--muted)} p.muted{color:var(--muted);font-size:15px;margin:2px 0 14px}
+  label{font-size:14px;color:var(--muted);display:block;margin:10px 0 6px}
+  select,input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="time"]{width:100%;padding:14px;border-radius:14px;border:1px solid var(--border);background:#0f1724;color:var(--text);font-size:16px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}.row>*{flex:1}
+  .btn{appearance:none;border:none;cursor:pointer;padding:14px 18px;border-radius:16px;font-weight:800;color:#0a1220;background:var(--primary);font-size:18px;min-height:52px;transition:transform .05s}
+  .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn.secondary{background:#203048;color:var(--text);border:1px solid var(--border)}
+  .btn.ghost{background:transparent;border:2px dashed var(--border);color:#c7d6ed}
+  .btn.ok{background:var(--ok)} .btn.warn{background:var(--warn);color:#102018} .btn.danger{background:var(--danger);color:#fff} .btn.block{width:100%}
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);background-color:rgba(10,16,25,.75);backdrop-filter:blur(8px)}
+  .brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:.3px;font-size:20px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 16px rgba(77,163,255,.6)}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap}
+  .tab{border:1px solid var(--border);background:var(--chip);color:var(--text);padding:12px 16px;border-radius:999px;cursor:pointer;font-size:16px;font-weight:700}
+  .tab.active{background:linear-gradient(135deg,#123154,#1a3f66);border-color:#1f3f66}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--chip);font-size:13px;color:var(--muted)}
+  .dot-seat{width:16px;height:16px;border-radius:5px;border:1px solid #0f1624}
+  .s-avail{background:#16a34a}.s-held{background:#f59e0b}.s-booked{background:#b91c1c}.s-access{background:linear-gradient(135deg,#4da3ff,#8b5cf6)}
+  .seat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:12px;background:#0f1724;border:1px solid var(--border);border-radius:16px;margin-top:10px}
+  .seat{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;user-select:none;border:1px solid #09111d;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+  .seat.avail{background:#16a34a}
+  .seat.held{background:#f59e0b;color:#0a101a}
+  .seat.booked{background:#b91c1c;cursor:not-allowed}
+  .seat.mine{outline:3px solid #93c5fd}
+  #loginView{min-height:100vh;display:grid;place-items:center;padding:24px}
+  #loginCard{width:min(520px,92vw)}
+  #reserveView,#seatsView,#bookingsView{padding-bottom:40px}
+  .crumbs{color:#bcd0ea;font-size:14px;margin:0 0 10px}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  th,td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:15px} th{background:#101a2b;color:#bcd0ea} tr:last-child td{border-bottom:none}
+  .status{padding:6px 10px;border-radius:999px;font-size:13px;border:1px solid var(--border);background:var(--chip);color:var(--muted)}
+  .status.ok{background:#0d2616;color:#86efac;border-color:#14532d} .status.cancel{background:#2b0f13;color:#fecaca;border-color:#7f1d1d}
+  .toast{position:fixed;right:20px;bottom:20px;background:#0f1724;border:1px solid var(--border);border-radius:14px;padding:12px 16px;color:var(--text);box-shadow:var(--shadow);display:none;z-index:110;font-size:15px}
+  .toast.show{display:block}
+</style>
+</head>
+<body>
+
+<header id="appTopbar" class="topbar hidden">
+  <div class="brand"><span class="dot"></span> Smart Seat</div>
+  <nav class="tabs">
+    <button class="tab" id="nav-reserve">Reserve</button>
+    <button class="tab" id="nav-seats">Seats</button>
+    <button class="tab" id="nav-bookings">My Bookings</button>
+    <button class="tab" id="nav-logout">Logout</button>
+  </nav>
+</header>
+
+<!-- Login -->
+<section id="loginView">
+  <div id="loginCard" class="card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="brand" style="font-size:22px"><span class="dot"></span> Smart Seat</div>
+    <h1 id="loginTitle" style="margin:6px 0 4px">Login</h1>
+    <p class="muted">Frontend-only demo. Replace with real auth later.</p>
+    <label>Email</label><input id="email" type="email" placeholder="you@example.com" autocomplete="username"/>
+    <label>Password</label><input id="pwd" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    <div class="row" style="margin-top:14px">
+      <button class="btn block" id="btn-login">Login</button>
+      <button class="btn ghost block" id="btn-demo">Use Demo Account</button>
+    </div>
+  </div>
+</section>
+
+<!-- Reserve -->
+<section id="reserveView" class="container hidden">
+  <div class="crumbs">Step 1 / 2 · Choose building, room & time</div>
+  <div class="grid grid-cols-2">
+    <div class="card">
+      <h1>Reserve Your Seat</h1>
+      <p class="muted">Select building and room, then set date and time. Click <b>Continue</b>.</p>
+      <div class="row">
+        <div>
+          <label>Building</label>
+          <select id="building">
+            <option value="" selected hidden>Select Building</option>
+            <option value="A">Building A</option>
+            <option value="B">Building B</option>
+            <option value="C">Building C</option>
+          </select>
+        </div>
+        <div>
+          <label>Room</label>
+          <select id="room" disabled>
+            <option value="" selected>Please select building first</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Date</label><input id="date" type="date"></div>
+        <div><label>Start Time</label><input id="start" type="time" value="09:00"></div>
+        <div><label>End Time</label><input id="end" type="time" value="10:00"></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:12px">
+        <button class="btn secondary" id="btn-clear">Clear</button>
+        <button class="btn" id="btn-continue" disabled>Continue</button>
+      </div>
+    </div>
+    <div class="card">
+      <h1>Legend</h1>
+      <div class="legend">
+        <span class="chip"><span class="dot-seat s-avail"></span> Available</span>
+        <span class="chip"><span class="dot-seat s-held"></span> Held (Locked)</span>
+        <span class="chip"><span class="dot-seat s-booked"></span> Booked</span>
+        <span class="chip"><span class="dot-seat s-access"></span> Accessible</span>
+      </div>
+      <p class="muted">Seat map appears on next page. Locks auto-expire in 120s.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Seats -->
+<section id="seatsView" class="container hidden">
+  <div class="crumbs">Step 2 / 2 · Pick a seat</div>
+  <div class="grid grid-cols-2">
+    <div class="card">
+      <h1>Selected Context</h1>
+      <div id="ctxBox" class="muted">—</div>
+      <div class="legend" style="margin-top:6px">
+        <span class="chip"><span class="dot-seat s-avail"></span> Available</span>
+        <span class="chip"><span class="dot-seat s-held"></span> Held (Locked)</span>
+        <span class="chip"><span class="dot-seat s-booked"></span> Booked</span>
+      </div>
+      <div class="row" style="justify-content:flex-start;margin-top:10px">
+        <button class="btn secondary" id="btn-back-reserve">← Back</button>
+        <button class="btn ok" id="btn-confirm" disabled>Confirm Seat</button>
+        <button class="btn danger" id="btn-release" disabled>Release Hold</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Confirm will create a booking and finalize the lock.</p>
+    </div>
+    <div class="card">
+      <h1>Select a Seat</h1>
+      <div id="seatGrid" class="seat-grid" aria-live="polite">
+        <div style="grid-column:1/-1;color:var(--muted);padding:12px;font-size:16px">Loading seats…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bookings -->
+<section id="bookingsView" class="container hidden">
+  <div class="crumbs">Your bookings</div>
+  <div class="card">
+    <h1>My Bookings</h1>
+    <p class="muted">Manage your reservations below.</p>
+    <div id="bookingsEmpty" class="muted" style="display:none">No records.</div>
+    <div style="overflow:auto">
+      <table id="bookingsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Building - Room</th><th>Seat</th><th>Date</th><th>Time</th><th>Status</th><th style="width:320px">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------------- API ---------------- */
+const BASE = 'https://smartseat.loca.lt'; // 改成你的 json-server 外网地址或 http://localhost:3000
+const HOLD_SECONDS = 120;
+const POLL_MS = 1500;
+
+function isoNow(){ return new Date().toISOString(); }
+function isoPlusSeconds(s){ return new Date(Date.now() + s*1000).toISOString(); }
+
+const api = {
+  login: async (email, password)=>{
+    if(!email) throw new Error("Please enter your email");
+    const q = await fetch(`${BASE}/users?email=${encodeURIComponent(email)}`);
+    const arr = await q.json();
+    let user = arr[0];
+    if(!user){
+      user = { id: 'u_' + btoa(email).slice(0,8), email, name: (email.split('@')[0]||'User') };
+      await fetch(`${BASE}/users`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(user) });
+    }
+    localStorage.setItem('SF_USER', JSON.stringify(user));
+    return user;
+  },
+  logout: async ()=> localStorage.removeItem('SF_USER'),
+  currentUser: ()=> JSON.parse(localStorage.getItem('SF_USER')||'null'),
+
+  listRooms: async (b)=>{
+    const r = await fetch(`${BASE}/rooms?buildingId=${encodeURIComponent(b)}`);
+    const rooms = await r.json();
+    return rooms.map(r => ({ id: r.id, name: r.name }));
+  },
+
+  // seats：仅存 held / booked；未出现默认 available
+  getSeatRecords: async (room)=>{
+    const res = await fetch(`${BASE}/seats?room=${encodeURIComponent(room)}`);
+    return res.json();
+  },
+  getSeatRecord: async (room, seat)=>{
+    const id = `${room}_${seat}`;
+    const res = await fetch(`${BASE}/seats?id=${encodeURIComponent(id)}`);
+    const arr = await res.json();
+    return arr[0] || null;
+  },
+  upsertSeat: async (payload)=>{
+    const id = payload.id || `${payload.room}_${payload.seat}`;
+    const existing = await (await fetch(`${BASE}/seats?id=${encodeURIComponent(id)}`)).json();
+    if(existing.length){
+      const seat = existing[0];
+      const res = await fetch(`${BASE}/seats/${seat.id}`, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ ...payload, id, version: (seat.version||0)+1, updatedAt: isoNow() })
+      });
+      return res.json();
+    }else{
+      const res = await fetch(`${BASE}/seats`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ ...payload, id, version: 0, updatedAt: isoNow() })
+      });
+      return res.json();
+    }
+  },
+
+  listReservations: async (uid)=>{
+    const res = await fetch(`${BASE}/reservations?userId=${encodeURIComponent(uid)}&_sort=date,start`);
+    return res.json();
+  },
+  createReservation: async (payload)=>{
+    const now = isoNow();
+    const user = api.currentUser();
+    const withMeta = { ...payload, id: 'r_'+Date.now(), status: 'Booked', createdAt: now, updatedAt: now, userEmail: user?.email };
+    const res = await fetch(`${BASE}/reservations`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(withMeta) });
+    const created = await res.json();
+    await fetch(`${BASE}/reservationEvents`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reservationId: created.id, event: 'BOOKED', at: now }) });
+    return created;
+  },
+  cancelReservation: async (id)=>{
+    const now = isoNow();
+    const res = await fetch(`${BASE}/reservations/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: 'Canceled', updatedAt: now }) });
+    const updated = await res.json();
+    await fetch(`${BASE}/reservationEvents`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reservationId: id, event: 'CANCELED', at: now }) });
+    return updated;
+  },
+  checkinReservation: async (id)=>{
+    const now = isoNow();
+    const res = await fetch(`${BASE}/reservations/${id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ status: 'Checked-in', updatedAt: now }) });
+    const updated = await res.json();
+    await fetch(`${BASE}/reservationEvents`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ reservationId: id, event: 'CHECKED_IN', at: now }) });
+    return updated;
+  }
+};
+
+/* ---------------- Utils & State ---------------- */
+const $ = (q)=>document.querySelector(q);
+const state = {
+  seatSelected: null,     // {label, status}
+  myHeldSeat: null,       // {room, seat}
+  pollTimer: null
+};
+function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800);}
+function showTopbar(show){ $('#appTopbar').classList.toggle('hidden',!show); }
+function setTabs(active){ ['reserve','seats','bookings'].forEach(n=>$('#nav-'+n).classList.toggle('active', n===active)); }
+function user(){ return api.currentUser(); }
+function ctx(){ return JSON.parse(localStorage.getItem('SF_CTX')||'null'); }
+
+/* ---------------- Router ---------------- */
+function guardAndRender(){
+  const route=(location.hash||'#/login').replace('#','');
+  const logged=!!api.currentUser();
+  if(route!=='/login' && !logged){ location.hash='#/login'; return; }
+  if((route==='/seats' || route==='/bookings') && !ctx()){ location.hash='#/reserve'; return; }
+  ['loginView','reserveView','seatsView','bookingsView'].forEach(id=> $('#'+id).classList.add('hidden'));
+  if(route==='/login'){ showTopbar(false); $('#loginView').classList.remove('hidden'); stopPolling(); }
+  if(route==='/reserve'){ showTopbar(true); setTabs('reserve'); $('#reserveView').classList.remove('hidden'); renderReserveFromCtx(); stopPolling(); }
+  if(route==='/seats'){ showTopbar(true); setTabs('seats'); $('#seatsView').classList.remove('hidden'); renderSeatsPage(); startPolling(); }
+  if(route==='/bookings'){ showTopbar(true); setTabs('bookings'); $('#bookingsView').classList.remove('hidden'); renderBookings(); stopPolling(); }
+}
+window.addEventListener('hashchange', guardAndRender);
+
+/* ---------------- Login ---------------- */
+$('#btn-login').addEventListener('click', ()=> doLogin($('#email').value.trim(), $('#pwd').value));
+$('#btn-demo').addEventListener('click', ()=> doLogin('demo@student.jcu.sg','demo123'));
+async function doLogin(email,pwd){ try{ await api.login(email,pwd); toast('Logged in'); location.hash='#/reserve'; } catch(e){ toast(e.message||'Login failed'); }}
+
+/* ---------------- Topbar nav ---------------- */
+$('#nav-reserve').addEventListener('click', ()=> location.hash='#/reserve');
+$('#nav-seats').addEventListener('click', ()=> location.hash='#/seats');
+$('#nav-bookings').addEventListener('click', ()=> location.hash='#/bookings');
+$('#nav-logout').addEventListener('click', async ()=>{
+  await releaseMyHold(); await api.logout(); toast('Logged out'); location.hash='#/login';
+});
+
+/* ---------------- Reserve Page ---------------- */
+const buildingSel=$('#building'); const roomSel=$('#room');
+function renderReserveFromCtx(){
+  const c=ctx(); const today=new Date().toISOString().slice(0,10);
+  $('#date').value=(c&&c.date)||today; $('#start').value=(c&&c.start)||'09:00'; $('#end').value=(c&&c.end)||'10:00';
+  buildingSel.value=(c&&c.building)||'';
+  if(buildingSel.value){
+    roomSel.disabled=false;
+    api.listRooms(buildingSel.value).then(rs=>{
+      roomSel.innerHTML=`<option value="" hidden>Select Room</option>`+rs.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+      roomSel.value=(c&&c.room)||''; updateContinueState();
+    });
+  }else{
+    roomSel.disabled=true; roomSel.innerHTML=`<option value="" selected>Please select building first</option>`; updateContinueState();
+  }
+}
+function updateContinueState(){ const ok=buildingSel.value&&roomSel.value&&$('#date').value&&$('#start').value&&$('#end').value; $('#btn-continue').disabled=!ok; }
+buildingSel.addEventListener('change', async ()=>{
+  roomSel.innerHTML=''; roomSel.disabled=!buildingSel.value;
+  if(!buildingSel.value){ roomSel.innerHTML=`<option value="">Please select building first</option>`; }
+  else { const rs=await api.listRooms(buildingSel.value); roomSel.innerHTML=`<option value="" hidden>Select Room</option>`+rs.map(r=>`<option value="${r.id}">${r.name}</option>`).join(''); }
+  updateContinueState();
+});
+roomSel.addEventListener('change', updateContinueState);
+['date','start','end'].forEach(id=> document.getElementById(id).addEventListener('change', updateContinueState));
+$('#btn-clear').addEventListener('click', ()=>{
+  buildingSel.value=''; roomSel.disabled=true; roomSel.innerHTML=`<option value="">Please select building first</option>`;
+  const today=new Date().toISOString().slice(0,10); $('#date').value=today; $('#start').value='09:00'; $('#end').value='10:00'; updateContinueState();
+});
+$('#btn-continue').addEventListener('click', async ()=>{
+  const c={building:buildingSel.value,room:roomSel.value,date:$('#date').value,start:$('#start').value,end:$('#end').value};
+  localStorage.setItem('SF_CTX',JSON.stringify(c));
+  await releaseMyHold();
+  location.hash='#/seats';
+});
+
+/* ---------------- Seats Page (diff 渲染避免闪烁) ---------------- */
+const R=['A','B','C','D','E','F','G','H'], C8=[1,2,3,4,5,6,7,8];
+const seatCache = new Map(); // label -> {record}
+let pollTimer = null;
+let pollInFlight = null;
+
+$('#btn-back-reserve').addEventListener('click', async ()=>{ await releaseMyHold(); location.hash='#/reserve'; });
+$('#btn-release').addEventListener('click', async ()=>{ await releaseMyHold(); });
+
+function isExpired(rec){
+  return rec && rec.status==='held' && rec.holdUntil && new Date(rec.holdUntil) < new Date();
+}
+function seatVisualState(record, uid){
+  if(!record) return {cls:'avail', mine:false};
+  if(record.status==='booked') return {cls:'booked', mine:false};
+  if(record.status==='held' && !isExpired(record)){ return {cls:'held', mine: record.holdBy===uid}; }
+  return {cls:'avail', mine:false};
+}
+
+async function renderSeatsPage(){
+  const c = ctx(); if(!c){ location.hash='#/reserve'; return; }
+  $('#ctxBox').innerHTML=`<div class="row"><div><strong>Building</strong><br>${c.building}</div><div><strong>Room</strong><br>${c.room}</div><div><strong>Date</strong><br>${c.date}</div></div>
+                          <div class="row" style="margin-top:6px"><div><strong>Start</strong><br>${c.start}</div><div><strong>End</strong><br>${c.end}</div></div>`;
+  initSeatGridOnce();
+  await refreshSeatGrid(); // 首次立即刷新
+}
+
+function initSeatGridOnce(){
+  const grid = $('#seatGrid');
+  if(grid.dataset.inited === '1') return;
+  grid.innerHTML = '';
+  const u = user();
+  const frag = document.createDocumentFragment();
+
+  R.forEach(r=> C8.forEach(c=>{
+    const label = `${r}${c}`;
+    const d = document.createElement('div');
+    d.className = 'seat avail';
+    d.textContent = label;
+    d.dataset.label = label;
+    d.tabIndex = 0;
+
+    const pick = async ()=>{
+      const s = seatCache.get(label);
+      const vis = seatVisualState(s?.record, u?.id);
+      if(vis.cls==='booked') return;
+      if(vis.cls==='held' && !vis.mine){ toast('This seat is currently locked by someone else.'); return; }
+
+      await releaseMyHold();
+
+      const c = ctx();
+      const latest = await api.getSeatRecord(c.room, label);
+      if(latest && latest.status==='booked'){ toast('Seat just got booked.'); await refreshSeatGrid(); return; }
+      if(latest && latest.status==='held' && latest.holdBy!==u.id && !isExpired(latest)){
+        toast('Locked by someone else.'); await refreshSeatGrid(); return;
+      }
+
+      await api.upsertSeat({
+        room: c.room, building: c.building, seat: label,
+        status: 'held', holdBy: u.id, holdUntil: isoPlusSeconds(HOLD_SECONDS), bookedBy: null
+      });
+
+      state.seatSelected = { label, status:'held' };
+      state.myHeldSeat = { room: c.room, seat: label };
+      $('#btn-confirm').disabled=false; $('#btn-release').disabled=false;
+
+      seatCache.set(label, { record: { status:'held', holdBy:u.id, seat:label } });
+      applySeatDiff();
+      toast(`Seat ${label} locked for ${HOLD_SECONDS}s`);
+    };
+
+    d.addEventListener('click', pick);
+    d.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(); }});
+    frag.appendChild(d);
+  }));
+
+  grid.appendChild(frag);
+  grid.dataset.inited = '1';
+}
+
+function applySeatDiff(){
+  const grid = $('#seatGrid');
+  const u = user();
+  grid.querySelectorAll('.seat').forEach(el=>{
+    const label = el.dataset.label;
+    const rec = seatCache.get(label)?.record || null;
+    const vis = seatVisualState(rec, u?.id);
+    const want = `seat ${vis.cls}${vis.mine?' mine':''}`;
+    if(el.className !== want) el.className = want;
+  });
+}
+
+async function refreshSeatGrid(){
+  const c = ctx(); if(!c) return;
+  if(pollInFlight){ try{ await pollInFlight; }catch{} }
+
+  pollInFlight = (async ()=>{
+    const records = await api.getSeatRecords(c.room);
+    const next = new Map();
+    records.forEach(r=>{
+      if(!isExpired(r)){ next.set(r.seat, {record:r}); }
+    });
+    seatCache.clear();
+    next.forEach((v,k)=> seatCache.set(k, v));
+    applySeatDiff();
+  })();
+
+  try{ await pollInFlight; }finally{ pollInFlight = null; }
+}
+
+function startPolling(){
+  if(pollTimer) return;
+  pollTimer = setInterval(async ()=>{
+    const onSeatsView = !$('#seatsView').classList.contains('hidden');
+    if(onSeatsView) await refreshSeatGrid();
+  }, POLL_MS);
+
+  document.addEventListener('visibilitychange', ()=>{
+    const hidden = document.hidden;
+    if(hidden && pollTimer){ clearInterval(pollTimer); pollTimer=null; }
+    if(!hidden && !pollTimer){ pollTimer=setInterval(refreshSeatGrid, POLL_MS); }
+  });
+}
+function stopPolling(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; }}
+
+/* ---------------- Hold helpers ---------------- */
+async function releaseMyHold(){
+  const u=user(); const c=ctx();
+  if(!u||!c||!state.myHeldSeat) { state.myHeldSeat=null; state.seatSelected=null; $('#btn-confirm').disabled=true; $('#btn-release').disabled=true; return; }
+  const seatId = `${c.room}_${state.myHeldSeat.seat}`;
+  // 直接 PATCH，避免多一次 GET
+  await fetch(`${BASE}/seats/${encodeURIComponent(seatId)}`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ status:'available', holdBy:null, holdUntil:null, bookedBy:null, updatedAt: isoNow() })
+  }).catch(()=>{});
+  state.myHeldSeat=null; state.seatSelected=null;
+  $('#btn-confirm').disabled=true; $('#btn-release').disabled=true;
+
+  // 本地立即更新，避免闪
+  seatCache.delete(seatId.split('_')[1]);
+  applySeatDiff();
+}
+
+/* ---------------- Confirm / Bookings ---------------- */
+$('#btn-confirm').addEventListener('click', async ()=>{
+  const u=user(); const c=ctx();
+  if(!state.myHeldSeat){ toast('No seat held.'); return; }
+  const label = state.myHeldSeat.seat;
+
+  const rec = await api.getSeatRecord(c.room, label);
+  if(!rec || rec.status!=='held' || rec.holdBy!==u.id){ toast('Hold lost or seat unavailable.'); await refreshSeatGrid(); return; }
+
+  await api.upsertSeat({ id: rec.id, room: c.room, building: c.building, seat: label, status:'booked', bookedBy:u.id, holdBy:null, holdUntil:null });
+
+  await api.createReservation({ userId:u.id, building:c.building, room:c.room, seat:label, date:c.date, start:c.start, end:c.end });
+
+  state.myHeldSeat=null; state.seatSelected=null;
+  $('#btn-confirm').disabled=true; $('#btn-release').disabled=true;
+
+  // 本地立即更新
+  seatCache.set(label, {record:{status:'booked', seat:label}});
+  applySeatDiff();
+
+  toast(`Seat ${label} booked ✅`);
+  location.hash='#/bookings';
+});
+
+async function renderBookings(){
+  const u=user(); const list=await api.listReservations(u.id);
+  const empty=$('#bookingsEmpty'); const table=$('#bookingsTable'); const tbody=table.querySelector('tbody'); tbody.innerHTML='';
+  if(!list.length){ empty.style.display='block'; table.style.display='none'; return; }
+  empty.style.display='none'; table.style.display='table';
+  list.sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+
+  list.forEach(r=>{
+    const tr=document.createElement('tr'); const time=`${r.start}–${r.end}`; const statusCls=r.status==='Canceled'?'cancel':(r.status==='Checked-in'?'ok':'');
+    tr.innerHTML=`<td>${r.building} - ${r.room}</td><td>${r.seat}</td><td>${r.date}</td><td>${time}</td>
+                  <td><span class="status ${statusCls}">${r.status}</span></td>
+                  <td><div class="row" style="gap:10px;justify-content:flex-start">
+                        <button class="btn ok" data-act="checkin"${r.status!=='Booked'?' disabled':''}>Check in</button>
+                        <button class="btn danger" data-act="cancel"${r.status!=='Booked'?' disabled':''}>Cancel</button>
+                      </div></td>`;
+
+    const [checkBtn,cancelBtn]=tr.querySelectorAll('button');
+
+    function refreshTag(newStatus){
+      const chip=tr.querySelector('.status'); chip.textContent=newStatus; chip.className=`status ${newStatus==='Canceled'?'cancel':(newStatus==='Checked-in'?'ok':'')}`;
+      if(newStatus!=='Booked'){ checkBtn.disabled=true; cancelBtn.disabled=true; }
+    }
+
+    // Check-in：乐观更新 + 并行请求
+    checkBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      refreshTag('Checked-in');
+      toast('Checking in…');
+      api.checkinReservation(r.id).then(()=>{ toast('Checked in ✅'); }).catch(()=>{ refreshTag('Booked'); toast('Check-in failed, please retry'); });
+    });
+
+    // Cancel：乐观更新 + 并行释放座位
+    cancelBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      refreshTag('Canceled');
+      toast('Canceling…');
+
+      const seatId = `${r.room}_${r.seat}`;
+      Promise.allSettled([
+        api.cancelReservation(r.id),
+        fetch(`${BASE}/seats/${encodeURIComponent(seatId)}`, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ status:'available', holdBy:null, holdUntil:null, bookedBy:null, updatedAt: isoNow() })
+        })
+      ]).then(()=>{ toast('Canceled ✅'); }).catch(()=>{ toast('Cancel finished with warnings (network).'); });
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------------- Boot ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(!location.hash) location.hash='#/login';
+  guardAndRender();
+});
+</script>
+</body>
+</html>
