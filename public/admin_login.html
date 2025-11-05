@@ -1,0 +1,177 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Login · Smart Seat DB</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: #0f172a; color: #e2e8f0; display: grid; min-height: 100vh; place-items: center; }
+    .card { background: #111827; padding: 24px; border-radius: 16px; width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    label { display: block; font-size: 12px; color: #94a3b8; margin-top: 12px; }
+    input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #334155; background: #0b1220; color: #e5e7eb; }
+    button { margin-top: 16px; width: 100%; padding: 10px 12px; border-radius: 10px; border: none; background: #22c55e; color: #052e16; font-weight: 700; cursor: pointer; }
+    .muted { color: #94a3b8; font-size: 12px; margin-top: 8px; }
+    .error { color: #fecaca; background: #7f1d1d; padding: 8px 12px; border-radius: 10px; margin-top: 10px; }
+  </style>
+  <style>
+/* === Light Theme Override for Admin Login === */
+body{
+  background:#f6f8fb;
+  color:#0f172a;
+}
+.card{
+  background:#ffffff;
+  color:#0f172a;
+  border:1px solid #dbe2ea;
+  box-shadow:0 10px 30px rgba(15,23,42,.08);
+}
+h1{ color:#0f172a; }
+label{ color:#51637a; }
+input{
+  background:#ffffff;
+  color:#0f172a;
+  border:1px solid #cbd5e1;
+}
+button{
+  background:#2563eb;
+  color:#ffffff;
+}
+.muted{ color:#5a6b80; }
+.error{
+  color:#7f1d1d;
+  background:#fde6e6;
+  border:1px solid #f3c5c5;
+}
+</style>
+
+
+<style>
+/* =========================
+   Light/Dark Theme System (no JS)
+========================= */
+
+/* 默认：浅色 */
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --text:#0f172a; --muted:#51637a;
+  --primary:#2563eb; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#f1f5f9; --border:#dbe2ea; --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+
+/* 当勾选切换开关时，启用深色（纯 CSS，借助 :has ） */
+:root:has(#themeSwitch:checked){
+  --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#22c55e; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#0f172a; --border:#334155; --shadow:0 12px 30px rgba(0,0,0,.35);
+}
+
+/* 基础覆盖（尽量不影响布局） */
+html,body{ background:var(--bg)!important; color:var(--text)!important; }
+header,.topbar{ background:color-mix(in srgb,var(--card) 88%, transparent); border-bottom:1px solid var(--border)!important; box-shadow:0 4px 12px rgba(15,23,42,.06); }
+.card{ background:var(--card)!important; border:1px solid var(--border)!important; box-shadow:var(--shadow)!important; color:var(--text)!important; }
+select, input, textarea, button{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px; }
+button.primary, .btn{ background:var(--primary)!important; color:#fff!important; border:none!important; }
+.btn.secondary{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; }
+.btn.ok{ background:var(--ok)!important; color:#fff!important; }
+.btn.warn{ background:var(--warn)!important; color:#111!important; }
+.btn.danger{ background:var(--danger)!important; color:#fff!important; }
+.muted, small, .status{ color:var(--muted)!important; }
+th{ background:color-mix(in srgb,var(--chip) 80%, white); color:color-mix(in srgb,var(--text) 75%, #33506f); border-bottom:1px solid var(--border)!important; }
+td{ border-bottom:1px solid var(--border)!important; }
+
+/* 座位网格（若有） */
+.seat-grid{ background:var(--card)!important; border:1px solid var(--border)!important; }
+.seat{ border:1px solid color-mix(in srgb,#09111d 50%, var(--border))!important; box-shadow:inset 0 -2px 0 rgba(15,23,42,.10)!important; color:var(--text)!important; }
+.seat.avail{ background:#16a34a!important; color:#fff!important; }
+.seat.taken{ background:#b91c1c!important; color:#fff!important; }
+.seat.selected{ background:#f59e0b!important; color:#0a101a!important; }
+.seat.access{ background:linear-gradient(135deg,#2563eb,#7c3aed)!important; color:#fff!important; }
+
+.status{ background:var(--chip)!important; border:1px solid var(--border)!important; }
+.status.ok{ background:color-mix(in srgb,#e9f8ee 85%, var(--card)); color:#166534!important; border-color:#b5e2c5!important; }
+.status.cancel{ background:color-mix(in srgb,#fde6e6 85%, var(--card)); color:#7f1d1d!important; border-color:#f3c5c5!important; }
+
+.error{ color:#7f1d1d!important; background:#fde6e6!important; border:1px solid #f3c5c5!important; }
+.ok{ color:#166534!important; background:#e9f8ee!important; border:1px solid #b5e2c5!important; }
+
+/* 主题开关（纯 CSS，无JS） */
+.theme-toggle-wrap{
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--border); padding:6px 10px; border-radius:999px;
+  box-shadow:var(--shadow);
+}
+.theme-toggle-label{ font-size:12px; color:var(--muted); }
+.theme-btn{
+  position:relative; width:44px; height:24px; border:1px solid var(--border);
+  border-radius:999px; background:var(--chip); cursor:pointer; display:inline-block;
+}
+.theme-btn::after{
+  content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius:50%; background:var(--primary); transition:transform .2s;
+}
+#themeSwitch:checked + .theme-btn::after{ transform:translateX(20px); }
+:root:has(#themeSwitch:checked) .theme-btn{ box-shadow:0 0 0 3px rgba(34,197,94,.15) inset; }
+
+    /* Smart Seat logo 调整样式 */
+.logo {
+  height: 100px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+}
+</style>
+
+</head>
+<body>
+
+<!-- Theme toggle (no JS) -->
+<div class="theme-toggle-wrap" style="position:fixed; right:16px; top:14px; z-index:1000;">
+  <span class="theme-toggle-label">Theme</span>
+  <input id="themeSwitch" type="checkbox" hidden>
+  <label for="themeSwitch" class="theme-btn" aria-label="Toggle dark mode"></label>
+</div>
+
+  <div class="card">
+    <img src="assets/logo.png" alt="Smart Seat" class="logo">
+    <h1>Admin Login</h1>
+    <form id="form">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="admin@example.com" required />
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Admin@123" required />
+      <button type="submit">Sign in</button>
+      <div id="msg" class="muted">You must be an administrator to access the database.</div>
+    </form>
+  </div>
+
+  <script>
+    const API = (localStorage.getItem('AUTH_API') || 'http://localhost:3000').replace(/\/+$/, '');
+    const form = document.getElementById('form');
+    const msg = document.getElementById('msg');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = 'Signing in…';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch(API + '/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data && data.error || 'Login failed');
+        localStorage.setItem('ADMIN_TOKEN', data.token);
+        // pass API to dashboard as well
+        localStorage.setItem('AUTH_API', API);
+        location.href = 'admin_dashboard.html';
+      } catch (err) {
+        msg.className = 'error';
+        msg.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

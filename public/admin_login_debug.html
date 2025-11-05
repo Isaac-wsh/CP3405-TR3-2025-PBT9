@@ -1,0 +1,213 @@
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Login · Debug</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0f172a;color:#e2e8f0;display:grid;place-items:center;min-height:100vh;margin:0}
+  .card{background:#111827;padding:20px;border-radius:16px;width:380px;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+  input,button{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
+  button{margin-top:12px;border:none;background:#22c55e;color:#052e16;font-weight:700;cursor:pointer}
+  .row{display:flex;gap:8px;margin-top:8px}
+  small{color:#94a3b8}
+  .error{color:#fecaca;background:#7f1d1d;padding:8px 12px;border-radius:10px;margin-top:10px}
+  .ok{color:#dcfce7;background:#064e3b;padding:8px 12px;border-radius:10px;margin-top:10px}
+  code{background:#0b1220;padding:2px 6px;border-radius:6px}
+</style>
+
+<style>
+/* =========================
+   Light/Dark Theme System (no JS)
+========================= */
+
+/* 默认：浅色 */
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --text:#0f172a; --muted:#51637a;
+  --primary:#2563eb; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#f1f5f9; --border:#dbe2ea; --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+
+/* 当勾选切换开关时，启用深色（纯 CSS，借助 :has ） */
+:root:has(#themeSwitch:checked){
+  --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#22c55e; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#0f172a; --border:#334155; --shadow:0 12px 30px rgba(0,0,0,.35);
+}
+
+/* 基础覆盖（尽量不影响布局） */
+html,body{ background:var(--bg)!important; color:var(--text)!important; }
+header,.topbar{ background:color-mix(in srgb,var(--card) 88%, transparent); border-bottom:1px solid var(--border)!important; box-shadow:0 4px 12px rgba(15,23,42,.06); }
+.card{ background:var(--card)!important; border:1px solid var(--border)!important; box-shadow:var(--shadow)!important; color:var(--text)!important; }
+select, input, textarea, button{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px; }
+button.primary, .btn{ background:var(--primary)!important; color:#fff!important; border:none!important; }
+.btn.secondary{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; }
+.btn.ok{ background:var(--ok)!important; color:#fff!important; }
+.btn.warn{ background:var(--warn)!important; color:#111!important; }
+.btn.danger{ background:var(--danger)!important; color:#fff!important; }
+.muted, small, .status{ color:var(--muted)!important; }
+th{ background:color-mix(in srgb,var(--chip) 80%, white); color:color-mix(in srgb,var(--text) 75%, #33506f); border-bottom:1px solid var(--border)!important; }
+td{ border-bottom:1px solid var(--border)!important; }
+
+/* 座位网格（若有） */
+.seat-grid{ background:var(--card)!important; border:1px solid var(--border)!important; }
+.seat{ border:1px solid color-mix(in srgb,#09111d 50%, var(--border))!important; box-shadow:inset 0 -2px 0 rgba(15,23,42,.10)!important; color:var(--text)!important; }
+.seat.avail{ background:#16a34a!important; color:#fff!important; }
+.seat.taken{ background:#b91c1c!important; color:#fff!important; }
+.seat.selected{ background:#f59e0b!important; color:#0a101a!important; }
+.seat.access{ background:linear-gradient(135deg,#2563eb,#7c3aed)!important; color:#fff!important; }
+
+.status{ background:var(--chip)!important; border:1px solid var(--border)!important; }
+.status.ok{ background:color-mix(in srgb,#e9f8ee 85%, var(--card)); color:#166534!important; border-color:#b5e2c5!important; }
+.status.cancel{ background:color-mix(in srgb,#fde6e6 85%, var(--card)); color:#7f1d1d!important; border-color:#f3c5c5!important; }
+
+.error{ color:#7f1d1d!important; background:#fde6e6!important; border:1px solid #f3c5c5!important; }
+.ok{ color:#166534!important; background:#e9f8ee!important; border:1px solid #b5e2c5!important; }
+
+/* 主题开关（纯 CSS，无JS） */
+.theme-toggle-wrap{
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--border); padding:6px 10px; border-radius:999px;
+  box-shadow:var(--shadow);
+}
+.theme-toggle-label{ font-size:12px; color:var(--muted); }
+.theme-btn{
+  position:relative; width:44px; height:24px; border:1px solid var(--border);
+  border-radius:999px; background:var(--chip); cursor:pointer; display:inline-block;
+}
+.theme-btn::after{
+  content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius:50%; background:var(--primary); transition:transform .2s;
+}
+#themeSwitch:checked + .theme-btn::after{ transform:translateX(20px); }
+:root:has(#themeSwitch:checked) .theme-btn{ box-shadow:0 0 0 3px rgba(34,197,94,.15) inset; }
+
+/* === Fix code background color for light/dark mode === */
+
+/* 浅色模式：浅灰底 + 深色字 */
+:root:not(:has(#themeSwitch:checked)) code {
+  background-color: #f1f3f7 !important;
+  color: #0f172a !important;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+/* 深色模式：深灰底 + 浅色字 */
+:root:has(#themeSwitch:checked) code {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+    /* Smart Seat logo 调整样式 */
+.logo {
+  height: 100px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+}
+</style>
+
+</head>
+<body>
+
+<!-- Theme toggle (no JS) -->
+<div class="theme-toggle-wrap" style="position:fixed; right:16px; top:14px; z-index:1000;">
+  <span class="theme-toggle-label">Theme</span>
+  <input id="themeSwitch" type="checkbox" hidden>
+  <label for="themeSwitch" class="theme-btn" aria-label="Toggle dark mode"></label>
+</div>
+
+  <div class="card">
+    <img src="assets/logo.png" alt="Smart Seat" class="logo">
+    <h2 style="margin:0 0 8px">Admin Login · Debug</h2>
+    <small>当前 API：<code id="api"></code></small>
+    <div class="row">
+      <input id="apiInput" placeholder="http://localhost:3000">
+      <button id="saveApi" style="width:auto">保存API</button>
+    </div>
+    <div class="row">
+      <button id="probe" style="width:auto;background:#38bdf8;color:#0c4a6e">探测 /health</button>
+      <small id="health" style="flex:1"></small>
+    </div>
+    <label style="display:block;margin-top:10px">Email</label>
+    <input id="email" value="admin@example.com">
+    <label style="display:block;margin-top:10px">Password</label>
+    <input id="password" type="password" value="Admin@123">
+    <button id="loginBtn">Sign in</button>
+    <div id="msg" class="error" style="display:none"></div>
+    <div id="ok" class="ok" style="display:none"></div>
+    <small>Token 片段：<code id="tokfrag">[无]</code></small>
+  </div>
+
+<script>
+const apiEl = document.getElementById('api');
+const apiInput = document.getElementById('apiInput');
+const saveApi = document.getElementById('saveApi');
+const probeBtn = document.getElementById('probe');
+const health = document.getElementById('health');
+const msg = document.getElementById('msg');
+const ok = document.getElementById('ok');
+const tokfrag = document.getElementById('tokfrag');
+
+function getAPI(){
+  return (localStorage.getItem('AUTH_API')||'http://localhost:3000').replace(/\/+$/,'');
+}
+function showTokenFrag(){
+  const t=localStorage.getItem('ADMIN_TOKEN');
+  tokfrag.textContent=t? t.slice(0,24)+'…' : '[无]';
+}
+function setMsg(el, text){ el.style.display='block'; el.textContent=text; }
+
+function init(){
+  const api=getAPI();
+  apiEl.textContent=api;
+  apiInput.value=api;
+  showTokenFrag();
+}
+init();
+
+saveApi.onclick=()=>{
+  const v=apiInput.value.trim();
+  localStorage.setItem('AUTH_API', v);
+  apiEl.textContent=v;
+};
+
+probeBtn.onclick=async ()=>{
+  health.textContent='...';
+  try{
+    const r=await fetch(getAPI()+'/health');
+    const j=await r.json();
+    health.textContent='ok='+j.ok+' uptime='+Math.floor(j.uptime)+'s';
+  }catch(e){ health.textContent='连接失败'; }
+};
+
+document.getElementById('loginBtn').onclick=async ()=>{
+  msg.style.display='none'; ok.style.display='none';
+  const email=document.getElementById('email').value.trim();
+  const password=document.getElementById('password').value;
+  try{
+    const r=await fetch(getAPI()+'/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password})
+    });
+    const data=await r.json();
+    if(!r.ok || !data.token){
+      setMsg(msg, '登录失败：'+(data && data.error || r.status));
+      return;
+    }
+    localStorage.setItem('ADMIN_TOKEN', data.token);
+    showTokenFrag();
+    setMsg(ok, '登录成功，即将进入仪表盘…');
+    setTimeout(()=>location.href='admin_dashboard_debug.html', 500);
+  }catch(e){
+    setMsg(msg, '网络错误：'+e.message);
+  }
+};
+</script>
+</body>
+</html>
