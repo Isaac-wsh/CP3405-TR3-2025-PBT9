@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Seat – Seat Lock (Login → Reserve → Seats → Bookings → Stats)</title>
+
+<style>
+  :root{--bg:#0b111b;--card:#121a27;--muted:#9fb0c7;--text:#eaf2ff;--primary:#4da3ff;--ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--accent:#8b5cf6;--border:#1f2a3a;--chip:#1b2535;--shadow:0 10px 30px rgba(0,0,0,.35);--radius:18px}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+    background:radial-gradient(1200px 600px at 20% -10%, #0d1522 20%, transparent 60%),
+               radial-gradient(1000px 500px at 120% 10%, #0d1522 10%, transparent 60%),var(--bg)}
+  .hidden{display:none!important}
+  .container{max-width:1080px;margin:24px auto 48px;padding:0 16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));border:1px solid var(--border);box-shadow:var(--shadow);border-radius:var(--radius);padding:20px}
+  .grid{display:grid;gap:18px} @media(min-width:900px){.grid-cols-2{grid-template-columns:1.1fr .9fr}}
+  h1{font-size:26px;margin:8px 0 6px} h2{font-size:20px;margin:14px 0 8px;color:var(--muted)} p.muted{color:var(--muted);font-size:15px;margin:2px 0 14px}
+  label{font-size:14px;color:var(--muted);display:block;margin:10px 0 6px}
+  select,input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="time"]{width:100%;padding:14px;border-radius:14px;border:1px solid var(--border);background:#0f1724;color:var(--text);font-size:16px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}.row>*{flex:1}
+  .btn{appearance:none;border:none;cursor:pointer;padding:14px 18px;border-radius:16px;font-weight:800;color:#0a1220;background:var(--primary);font-size:18px;min-height:52px;transition:transform .05s}
+  .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn.secondary{background:#203048;color:var(--text);border:1px solid var(--border)}
+  .btn.ghost{background:transparent;border:2px dashed var(--border);color:#c7d6ed}
+  .btn.ok{background:var(--ok)} .btn.warn{background:var(--warn);color:#102018} .btn.danger{background:var(--danger);color:#fff} .btn.block{width:100%}
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);background-color:rgba(10,16,25,.75);backdrop-filter:blur(8px)}
+  .brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:.3px;font-size:20px}
+  .brand .dot{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));box-shadow:0 0 16px rgba(77,163,255,.6)}
+  .tabs{display:flex;gap:10px;flex-wrap:wrap}
+  .tab{border:1px solid var(--border);background:var(--chip);color:var(--text);padding:12px 16px;border-radius:999px;cursor:pointer;font-size:16px;font-weight:700}
+  .tab.active{background:linear-gradient(135deg,#123154,#1a3f66);border-color:#1f3f66}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--chip);font-size:13px;color:var(--muted)}
+  .dot-seat{width:16px;height:16px;border-radius:5px;border:1px solid #0f1624}
+  .s-avail{background:#16a34a}.s-unavail{background:#b91c1c}.s-select{background:#f59e0b}.s-access{background:linear-gradient(135deg,#4da3ff,#8b5cf6)}
+  .seat-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:12px;background:#0f1724;border:1px solid var(--border);border-radius:16px;margin-top:10px}
+  .seat{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;user-select:none;border:1px solid #09111d;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+  .seat.avail{background:#16a34a} .seat.taken{background:#b91c1c;cursor:not-allowed} .seat.selected{background:#f59e0b;color:#0a101a} .seat.access{background:linear-gradient(135deg,#4da3ff,#8b5cf6)}
+  #loginView{min-height:100vh;display:grid;place-items:center;padding:24px}
+  #loginCard{width:min(520px,92vw)}
+  #reserveView,#seatsView,#bookingsView,#statsView{padding-bottom:40px}
+  .crumbs{color:#bcd0ea;font-size:14px;margin:0 0 10px}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  th,td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;font-size:15px} th{background:#101a2b;color:#bcd0ea} tr:last-child td{border-bottom:none}
+  .status{padding:6px 10px;border-radius:999px;font-size:13px;border:1px solid var(--border);background:var(--chip);color:var(--muted)}
+  .status.ok{background:#0d2616;color:#86efac;border-color:#14532d} .status.cancel{background:#2b0f13;color:#fecaca;border-color:#7f1d1d}
+  .toast{position:fixed;right:20px;bottom:20px;background:#0f1724;border:1px solid var(--border);border-radius:14px;padding:12px 16px;color:var(--text);box-shadow:var(--shadow);display:none;z-index:110;font-size:15px}
+  .toast.show{display:block}
+</style>
+
+<style>
+/* 主题变量：浅色 / 深色开关 */
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --text:#0f172a; --muted:#51637a;
+  --primary:#2563eb; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#f1f5f9; --border:#dbe2ea; --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+:root:has(#themeSwitch:checked){
+  --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#22c55e; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#0f172a; --border:#334155; --shadow:0 12px 30px rgba(0,0,0,.35);
+}
+html,body{ background:var(--bg)!important; color:var(--text)!important; }
+header,.topbar{ background:color-mix(in srgb,var(--card) 88%, transparent); border-bottom:1px solid var(--border)!important; box-shadow:0 4px 12px rgba(15,23,42,.06); }
+.card{ background:var(--card)!important; border:1px solid var(--border)!important; box-shadow:var(--shadow)!important; color:var(--text)!important; }
+select, input, textarea, button{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px; }
+button.primary, .btn{ background:var(--primary)!important; color:#fff!important; border:none!important; }
+.btn.secondary{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; }
+.btn.ok{ background:var(--ok)!important; color:#fff!important; }
+.btn.warn{ background:var(--warn)!important; color:#111!important; }
+.btn.danger{ background:var(--danger)!important; color:#fff!important; }
+.muted, small, .status{ color:var(--muted)!important; }
+th{ background:color-mix(in srgb,var(--chip) 80%, white); color:color-mix(in srgb,var(--text) 75%, #33506f); border-bottom:1px solid var(--border)!important; }
+td{ border-bottom:1px solid var(--border)!important; }
+.seat-grid{ background:var(--card)!important; border:1px solid var(--border)!important; }
+.seat{ border:1px solid color-mix(in srgb,#09111d 50%, var(--border))!important; box-shadow:inset 0 -2px 0 rgba(15,23,42,.10)!important; color:var(--text)!important; }
+.seat.avail{ background:#16a34a!important; color:#fff!important; }
+.seat.taken{ background:#b91c1c!important; color:#fff!important; }
+.seat.selected{ background:#f59e0b!important; color:#0a101a!important; }
+.seat.access{ background:linear-gradient(135deg,#2563eb,#7c3aed)!important; color:#fff!important; }
+.status{ background:var(--chip)!important; border:1px solid var(--border)!important; }
+.status.ok{ background:color-mix(in srgb,#e9f8ee 85%, var(--card)); color:#166534!important; border-color:#b5e2c5!important; }
+.status.cancel{ background:color-mix(in srgb,#fde6e6 85%, var(--card)); color:#7f1d1d!important; border-color:#f3c5f5!important; }
+
+/* 主题开关 UI */
+.theme-toggle-wrap{
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--border); padding:6px 10px; border-radius:999px;
+  box-shadow:var(--shadow);
+}
+.theme-toggle-label{ font-size:12px; color:var(--muted); }
+.theme-btn{
+  position:relative; width:44px; height:24px; border:1px solid var(--border);
+  border-radius:999px; background:var(--chip); cursor:pointer; display:inline-block;
+}
+.theme-btn::after{
+  content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius:50%; background:var(--primary); transition:transform .2s;
+}
+#themeSwitch:checked + .theme-btn::after{ transform:translateX(20px); }
+:root:has(#themeSwitch:checked) .theme-btn{ box-shadow:0 0 0 3px rgba(34,197,94,.15) inset; }
+
+/* 浅色模式 toast：白底黑字 */
+:root:not(:has(#themeSwitch:checked)) .toast {
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border:1px solid #dbe2ea !important;
+  box-shadow:0 6px 20px rgba(15,23,42,.1)!important;
+}
+
+/* Stats 页的小图样式 */
+.bar-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.bar-row .name{width:120px;color:var(--text)}
+.bar-row .bar-wrap{flex:1;background:var(--chip);border:1px solid var(--border);border-radius:999px;height:12px;overflow:hidden}
+.bar-row .bar{height:100%;background:linear-gradient(90deg,var(--primary),#60a5fa)}
+.bar-row .val{width:60px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.heat{aspect-ratio:1/1;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid #d1d9e6;color:#0f172a;font-weight:700}
+:root:has(#themeSwitch:checked) .heat{border-color:#09111d;color:#e5e7eb}
+
+/* logo */
+.logo {
+  height: 100px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+/* seat lock: 被锁定的座位样式（可按需调整） */
+.locked{
+  opacity:.5;
+  pointer-events:none;
+}
+</style>
+</head>
+
+<body>
+<header id="appTopbar" class="topbar hidden">
+  <div class="brand"><span class="dot"></span> Smart Seat</div>
+  <nav class="tabs">
+    <button class="tab" id="nav-reserve">Reserve</button>
+    <button class="tab" id="nav-seats">Seats</button>
+    <button class="tab" id="nav-bookings">My Bookings</button>
+    <button class="tab" id="nav-stats">Stats</button>
+    <button class="tab" id="nav-logout">Logout</button>
+  </nav>
+  <div class="theme-toggle-wrap">
+    <span class="theme-toggle-label">Theme</span>
+    <input id="themeSwitch" type="checkbox" hidden>
+    <label for="themeSwitch" class="theme-btn" aria-label="Toggle dark mode"></label>
+  </div>
+</header>
+
+<!-- Login -->
+<section id="loginView">
+  <div id="loginCard" class="card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="brand" style="font-size:22px">
+      <img src="assets/logo.png" alt="Smart Seat" class="logo">
+    </div>
+    <h1 id="loginTitle" style="margin:6px 0 4px">Login</h1>
+    <p class="muted">Frontend-only demo. Replace with real auth later.</p>
+    <label>Email</label><input id="email" type="email" placeholder="you@example.com" autocomplete="username"/>
+    <label>Password</label><input id="pwd" type="password" placeholder="••••••••" autocomplete="current-password"/>
+    <div class="row" style="margin-top:14px">
+      <button class="btn block" id="btn-login">Login</button>
+      <button class="btn ghost block" id="btn-demo">Use Demo Account</button>
+    </div>
+  </div>
+</section>
+
+<!-- Reserve -->
+<section id="reserveView" class="container hidden">
+  <div class="crumbs">Step 1 / 2 · Choose building, room & time</div>
+  <div class="grid grid-cols-2">
+    <div class="card">
+      <h1>Reserve Your Seat</h1>
+      <p class="muted">Select building and room, then set date and time. Click <b>Continue</b>.</p>
+      <div class="row">
+        <div>
+          <label>Building</label>
+          <select id="building">
+            <option value="" selected hidden>Select Building</option>
+            <option value="A">Building A</option>
+            <option value="B">Building B</option>
+            <option value="C">Building C</option>
+          </select>
+        </div>
+        <div>
+          <label>Room</label>
+          <select id="room" disabled>
+            <option value="" selected>Please select building first</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Date</label><input id="date" type="date"></div>
+        <div><label>Start Time</label><input id="start" type="time" value="09:00"></div>
+        <div><label>End Time</label><input id="end" type="time" value="10:00"></div>
+      </div>
+      <div class="row" style="justify-content:flex-end;margin-top:12px">
+        <button class="btn secondary" id="btn-clear">Clear</button>
+        <button class="btn" id="btn-continue" disabled>Continue</button>
+      </div>
+    </div>
+    <div class="card">
+      <h1>Legend</h1>
+      <div class="legend">
+        <span class="chip"><span class="dot-seat s-avail"></span> Available</span>
+        <span class="chip"><span class="dot-seat s-unavail"></span> Unavailable</span>
+        <span class="chip"><span class="dot-seat s-select"></span> Selected</span>
+        <span class="chip"><span class="dot-seat s-access"></span> Accessible</span>
+      </div>
+      <p class="muted">Seat map appears on next page.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Seats -->
+<section id="seatsView" class="container hidden">
+  <div class="crumbs">Step 2 / 2 · Pick a seat</div>
+  <div class="grid grid-cols-2">
+    <div class="card">
+      <h1>Selected Context</h1>
+      <div id="ctxBox" class="muted">—</div>
+      <div class="legend" style="margin-top:6px">
+        <span class="chip"><span class="dot-seat s-avail"></span> Available</span>
+        <span class="chip"><span class="dot-seat s-unavail"></span> Unavailable</span>
+        <span class="chip"><span class="dot-seat s-select"></span> Selected</span>
+        <span class="chip"><span class="dot-seat s-access"></span> Accessible</span>
+      </div>
+      <div class="row" style="justify-content:flex-start;margin-top:10px">
+        <button class="btn secondary" id="btn-back-reserve">← Back</button>
+        <button class="btn ok" id="btn-confirm" disabled>Confirm Seat</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Confirm will create a booking record.</p>
+    </div>
+    <div class="card">
+      <h1>Select a Seat</h1>
+      <div id="seatGrid" class="seat-grid" aria-live="polite">
+        <div style="grid-column:1/-1;color:var(--muted);padding:12px;font-size:16px">Loading seats…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bookings -->
+<section id="bookingsView" class="container hidden">
+  <div class="crumbs">Your bookings</div>
+  <div class="card">
+    <h1>My Bookings</h1>
+    <p class="muted">Manage your reservations below.</p>
+    <div id="bookingsEmpty" class="muted" style="display:none">No records.</div>
+    <div style="overflow:auto">
+      <table id="bookingsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Building - Room</th><th>Seat</th><th>Date</th><th>Time</th><th>Status</th><th style="width:260px">Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section id="statsView" class="container hidden">
+  <div class="crumbs">Seat usage analytics</div>
+  <div class="grid grid-cols-2">
+    <div class="card">
+      <h1>Today at a glance</h1>
+      <div class="row" style="gap:12px;flex-wrap:wrap">
+        <div class="chip" id="kpi-total">Total bookings: —</div>
+        <div class="chip" id="kpi-active">Active (Booked/Checked-in): —</div>
+        <div class="chip" id="kpi-cancel">Canceled: —</div>
+        <div class="chip" id="kpi-occupancy">Occupancy: —%</div>
+      </div>
+
+      <h2 style="margin-top:16px">Top rooms (7 days)</h2>
+      <div id="topRooms" style="margin-top:8px"></div>
+
+      <h2 style="margin-top:16px">Latest 20 reservations</h2>
+      <div style="overflow:auto">
+        <table id="statsTable"><thead>
+          <tr><th>Room</th><th>Seat</th><th>Date</th><th>Time</th><th>Status</th></tr>
+        </thead><tbody></tbody></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h1>Seat heatmap (7 days)</h1>
+      <p class="muted">Count by seat label (A1…H8). Darker = more booked.</p>
+      <div id="heatGrid" class="seat-grid" style="grid-template-columns:repeat(8,1fr)"></div>
+    </div>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------------- API + 事件总线 ---------------- */
+const HOST = location.hostname || 'localhost';
+const BASE = `http://${HOST}:3000`;
+
+// 简单事件总线：预订数据变化时通知 Stats
+const bus = new EventTarget();
+function notifyReservationsChanged(){
+  bus.dispatchEvent(new Event('reservations:changed'));
+}
+
+const api = {
+  login: async (email, password)=>{
+    if(!email) throw new Error("Please enter your email");
+    const q = await fetch(`${BASE}/users?email=${encodeURIComponent(email)}`);
+    const arr = await q.json();
+    let user = arr[0];
+    if(!user){
+      user = { id: 'u_' + btoa(email).slice(0,8), email, name: (email.split('@')[0]||'User') };
+      await fetch(`${BASE}/users`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(user)
+      });
+    }
+    localStorage.setItem('SF_USER', JSON.stringify(user));
+    return user;
+  },
+  logout: async ()=> localStorage.removeItem('SF_USER'),
+  currentUser: ()=> JSON.parse(localStorage.getItem('SF_USER')||'null'),
+
+  listRooms: async (b)=>{
+    const r = await fetch(`${BASE}/rooms?buildingId=${encodeURIComponent(b)}`);
+    const rooms = await r.json();
+    return rooms.map(r => ({ id: r.id, name: r.name }));
+  },
+
+  listSeats: async (ctx)=>{
+    // 用 reservations 计算当前时间段已经占用的座位
+    const R = ['A','B','C','D','E','F','G','H'];
+    const C = [1,2,3,4,5,6,7,8];
+    const seats = [];
+
+    const resp = await fetch(`${BASE}/reservations?room=${encodeURIComponent(ctx.room)}&date=${encodeURIComponent(ctx.date)}`, {
+      cache:'no-store'
+    });
+    const all = await resp.json();
+
+    const overlaps = (aStart, aEnd, bStart, bEnd) => (aStart < bEnd && bStart < aEnd);
+    const taken = new Set();
+    const s1 = ctx.start, e1 = ctx.end;
+    all.filter(r => r.status !== 'Canceled').forEach(r => {
+      if (overlaps(s1, e1, r.start, r.end)) taken.add(r.seat);
+    });
+
+    R.forEach(r => C.forEach(c => {
+      const label = `${r}${c}`;
+      seats.push({ id: label, label, status: taken.has(label)?'taken':'avail', accessible:false });
+    }));
+    return seats;
+  },
+
+  listReservations: async (uid)=>{
+    const res = await fetch(`${BASE}/reservations?userId=${encodeURIComponent(uid)}&_sort=date,start`);
+    return res.json();
+  },
+
+  createReservation: async (payload)=>{
+    const now = new Date().toISOString();
+    const user = api.currentUser();
+    const withMeta = { ...payload, id: 'r_'+Date.now(), status: 'Booked', createdAt: now, updatedAt: now, userEmail: user?.email };
+    const res = await fetch(`${BASE}/reservations`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(withMeta)
+    });
+    const created = await res.json();
+    await fetch(`${BASE}/reservationEvents`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ reservationId: created.id, event: 'BOOKED', at: now })
+    });
+    notifyReservationsChanged();
+    return created;
+  },
+
+  cancelReservation: async (id)=>{
+    const now = new Date().toISOString();
+    const res = await fetch(`${BASE}/reservations/${id}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'Canceled', updatedAt: now })
+    });
+    const updated = await res.json();
+    await fetch(`${BASE}/reservationEvents`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ reservationId: id, event: 'CANCELED', at: now })
+    });
+    notifyReservationsChanged();
+    return updated;
+  },
+
+  checkinReservation: async (id)=>{
+    const now = new Date().toISOString();
+    const res = await fetch(`${BASE}/reservations/${id}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'Checked-in', updatedAt: now })
+    });
+    const updated = await res.json();
+    await fetch(`${BASE}/reservationEvents`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ reservationId: id, event: 'CHECKED_IN', at: now })
+    });
+    notifyReservationsChanged();
+    return updated;
+  }
+};
+
+/* ---------------- State + helpers ---------------- */
+const $ = (q)=>document.querySelector(q);
+const state = {
+  user: api.currentUser(),
+  ctx: JSON.parse(localStorage.getItem('SF_CTX')||'null'),
+  seats:[],
+  seatSelected:null
+};
+function toast(m){
+  const t=$('#toast'); t.textContent=m; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+}
+function showTopbar(show){ $('#appTopbar').classList.toggle('hidden',!show); }
+function setTabs(active){
+  ['reserve','seats','bookings','stats'].forEach(n=>{
+    $('#nav-'+n)?.classList.toggle('active', n===active);
+  });
+}
+
+/* ---------------- Router ---------------- */
+let leaveStats = () => {};  // Stats 页的清理函数占位
+
+function guardAndRender(){
+  const route=(location.hash||'#/login').replace('#','');
+  const logged=!!api.currentUser();
+
+  // 先清理 Stats 的轮询 / 监听
+  leaveStats();
+
+  if(route!=='/login' && !logged){ location.hash='#/login'; return; }
+  if((route==='/seats' || route==='/bookings') && !JSON.parse(localStorage.getItem('SF_CTX')||'null')){
+    location.hash='#/reserve'; return;
+  }
+
+  ['loginView','reserveView','seatsView','bookingsView','statsView']
+    .forEach(id=> $('#'+id)?.classList.add('hidden'));
+
+  if(route==='/login'){
+    showTopbar(false);
+    $('#loginView').classList.remove('hidden');
+    return;
+  }
+  if(route==='/reserve'){
+    showTopbar(true); setTabs('reserve');
+    $('#reserveView').classList.remove('hidden');
+    renderReserveFromCtx();
+    return;
+  }
+  if(route==='/seats'){
+    showTopbar(true); setTabs('seats');
+    $('#seatsView').classList.remove('hidden');
+    renderSeatsPage();
+    return;
+  }
+  if(route==='/bookings'){
+    showTopbar(true); setTabs('bookings');
+    $('#bookingsView').classList.remove('hidden');
+    renderBookings();
+    return;
+  }
+  if(route==='/stats'){
+    showTopbar(true); setTabs('stats');
+    $('#statsView').classList.remove('hidden');
+    enterStats();
+    return;
+  }
+
+  location.hash = '#/login';
+}
+window.addEventListener('hashchange', guardAndRender);
+
+/* ---------------- Login ---------------- */
+$('#btn-login').addEventListener('click', ()=> doLogin($('#email').value.trim(), $('#pwd').value));
+$('#btn-demo').addEventListener('click', ()=> doLogin('demo@student.jcu.sg','demo123'));
+async function doLogin(email,pwd){
+  try{
+    await api.login(email,pwd);
+    toast('Logged in');
+    location.hash='#/reserve';
+  }catch(e){
+    toast(e.message||'Login failed');
+  }
+}
+
+/* ---------------- Topbar nav ---------------- */
+$('#nav-reserve').addEventListener('click', ()=> location.hash='#/reserve');
+$('#nav-seats').addEventListener('click', ()=> location.hash='#/seats');
+$('#nav-bookings').addEventListener('click', ()=> location.hash='#/bookings');
+$('#nav-stats').addEventListener('click', ()=> location.hash='#/stats');
+$('#nav-logout').addEventListener('click', ()=>{
+  api.logout();
+  toast('Logged out');
+  location.hash='#/login';
+});
+
+/* ---------------- Reserve Page ---------------- */
+const buildingSel=$('#building'); const roomSel=$('#room');
+function renderReserveFromCtx(){
+  const ctx=JSON.parse(localStorage.getItem('SF_CTX')||'null');
+  const today=new Date().toISOString().slice(0,10);
+  $('#date').value=(ctx&&ctx.date)||today;
+  $('#start').value=(ctx&&ctx.start)||'09:00';
+  $('#end').value=(ctx&&ctx.end)||'10:00';
+  buildingSel.value=(ctx&&ctx.building)||'';
+  if(buildingSel.value){
+    roomSel.disabled=false;
+    api.listRooms(buildingSel.value).then(rs=>{
+      roomSel.innerHTML=`<option value="" hidden>Select Room</option>`+
+        rs.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+      roomSel.value=(ctx&&ctx.room)||'';
+      updateContinueState();
+    });
+  }else{
+    roomSel.disabled=true;
+    roomSel.innerHTML=`<option value="" selected>Please select building first</option>`;
+    updateContinueState();
+  }
+}
+function updateContinueState(){
+  const ok=buildingSel.value&&roomSel.value&&$('#date').value&&$('#start').value&&$('#end').value;
+  $('#btn-continue').disabled=!ok;
+}
+buildingSel.addEventListener('change', async ()=>{
+  roomSel.innerHTML=''; roomSel.disabled=!buildingSel.value;
+  if(!buildingSel.value){
+    roomSel.innerHTML=`<option value="">Please select building first</option>`;
+  }else{
+    const rs=await api.listRooms(buildingSel.value);
+    roomSel.innerHTML=`<option value="" hidden>Select Room</option>`+
+      rs.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  }
+  updateContinueState();
+});
+roomSel.addEventListener('change', updateContinueState);
+['date','start','end'].forEach(id=> document.getElementById(id).addEventListener('change', updateContinueState));
+$('#btn-clear').addEventListener('click', ()=>{
+  buildingSel.value='';
+  roomSel.disabled=true;
+  roomSel.innerHTML=`<option value="">Please select building first</option>`;
+  const today=new Date().toISOString().slice(0,10);
+  $('#date').value=today; $('#start').value='09:00'; $('#end').value='10:00';
+  updateContinueState();
+});
+$('#btn-continue').addEventListener('click', ()=>{
+  const ctx={
+    building:buildingSel.value,
+    room:roomSel.value,
+    date:$('#date').value,
+    start:$('#start').value,
+    end:$('#end').value
+  };
+  localStorage.setItem('SF_CTX',JSON.stringify(ctx));
+  location.hash='#/seats';
+});
+
+/* ---------------- Seats Page ---------------- */
+$('#btn-back-reserve').addEventListener('click', ()=> location.hash='#/reserve');
+
+async function renderSeatsPage(){
+  const ctx=JSON.parse(localStorage.getItem('SF_CTX')||'null');
+  if(!ctx){ location.hash='#/reserve'; return; }
+  $('#ctxBox').innerHTML=
+    `<div class="row">
+       <div><strong>Building</strong><br>${ctx.building}</div>
+       <div><strong>Room</strong><br>${ctx.room}</div>
+       <div><strong>Date</strong><br>${ctx.date}</div>
+     </div>
+     <div class="row" style="margin-top:6px">
+       <div><strong>Start</strong><br>${ctx.start}</div>
+       <div><strong>End</strong><br>${ctx.end}</div>
+     </div>`;
+
+  const grid=$('#seatGrid');
+  grid.innerHTML=`<div style="grid-column:1/-1;color:var(--muted);padding:12px;font-size:16px">Loading seats…</div>`;
+  const seats=await api.listSeats(ctx);
+  state.seats=seats; state.seatSelected=null;
+  grid.innerHTML='';
+  seats.forEach(s=>{
+    const d=document.createElement('div');
+    d.className=`seat ${s.status==='taken'?'taken':'avail'} ${s.accessible?'access':''}`;
+    d.textContent=s.label;
+    d.title=s.accessible?`${s.label} (Accessible)`:s.label;
+    d.tabIndex=s.status==='taken'?-1:0;
+    const choose=()=>{
+      if(s.status==='taken') return;
+      [...grid.querySelectorAll('.seat.selected')].forEach(n=>n.classList.remove('selected'));
+      d.classList.add('selected');
+      state.seatSelected=s;
+      $('#btn-confirm').disabled=false;
+    };
+    d.addEventListener('click', choose);
+    d.addEventListener('keydown', e=>{
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); choose(); }
+    });
+    grid.appendChild(d);
+  });
+  $('#btn-confirm').disabled=true;
+}
+
+$('#btn-confirm').addEventListener('click', async ()=>{
+  if(!state.seatSelected) return;
+  const user=api.currentUser();
+  const ctx=JSON.parse(localStorage.getItem('SF_CTX')||'null');
+  await api.createReservation({
+    userId:user.id,
+    building:ctx.building,
+    room:ctx.room,
+    seat:state.seatSelected.label,
+    date:ctx.date,
+    start:ctx.start,
+    end:ctx.end
+  });
+  toast(`Seat ${state.seatSelected.label} booked ✅`);
+  if (location.hash === '#/stats') {
+    renderStats({nocache:true});
+  }
+  location.hash='#/bookings';
+});
+
+/* ---------------- Bookings Page ---------------- */
+async function renderBookings(){
+  const user=api.currentUser();
+  const list=await api.listReservations(user.id);
+  const empty=$('#bookingsEmpty');
+  const table=$('#bookingsTable');
+  const tbody=table.querySelector('tbody');
+  tbody.innerHTML='';
+  if(!list.length){
+    empty.style.display='block';
+    table.style.display='none';
+    return;
+  }
+  empty.style.display='none';
+  table.style.display='table';
+
+  list.sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+  list.forEach(r=>{
+    const tr=document.createElement('tr');
+    const time=`${r.start}–${r.end}`;
+    const statusCls=r.status==='Canceled'?'cancel':(r.status==='Checked-in'?'ok':'');
+    tr.innerHTML=
+      `<td>${r.building} - ${r.room}</td>
+       <td>${r.seat}</td>
+       <td>${r.date}</td>
+       <td>${time}</td>
+       <td><span class="status ${statusCls}">${r.status}</span></td>
+       <td>
+         <div class="row" style="gap:10px;justify-content:flex-start">
+           <button class="btn ok" data-act="checkin">Check in</button>
+           <button class="btn danger" data-act="cancel">Cancel</button>
+         </div>
+       </td>`;
+    const [checkBtn,cancelBtn]=tr.querySelectorAll('button');
+    function refresh(newStatus){
+      const chip=tr.querySelector('.status');
+      chip.textContent=newStatus;
+      chip.className=`status ${newStatus==='Canceled'?'cancel':(newStatus==='Checked-in'?'ok':'')}`;
+      if(newStatus!=='Booked'){
+        checkBtn.disabled=true;
+        cancelBtn.disabled=true;
+      }
+    }
+    checkBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      await api.checkinReservation(r.id);
+      toast('Checked in ✅');
+      refresh('Checked-in');
+      if (location.hash === '#/stats') renderStats({nocache:true});
+    });
+    cancelBtn.addEventListener('click', async ()=>{
+      if(r.status!=='Booked') return;
+      await api.cancelReservation(r.id);
+      toast('Canceled');
+      refresh('Canceled');
+      if (location.hash === '#/stats') renderStats({nocache:true});
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------------- Stats Page ---------------- */
+async function renderStats(opts={}) {
+  const today = new Date().toISOString().slice(0,10);
+  const bust = opts.nocache ? `&_=${Date.now()}` : '';
+  const resp = await fetch(`${BASE}/reservations?_sort=date,start&_order=desc${bust}`, {
+    cache:'no-store'
+  });
+  const all = await resp.json();
+  const clean = all.filter(r => r && r.room && r.seat && r.date && r.start && r.end);
+
+  const sevenAgo = new Date(Date.now()-6*86400000).toISOString().slice(0,10);
+  const in7d = clean.filter(r => r.date >= sevenAgo && r.date <= today);
+  const todayList = clean.filter(r => r.date === today);
+  const isActive = r => r.status !== 'Canceled';
+
+  // KPI：只看今天
+  const kTotal = todayList.length;
+  const kActive = todayList.filter(isActive).length;
+  const kCancel = todayList.filter(r => r.status === 'Canceled').length;
+
+  const ROOM_SIZE = 64;
+  const keySlot = r => `${r.room}|${r.date}|${r.start.slice(0,2)}`;
+  const denom = new Set(todayList.map(keySlot)).size * ROOM_SIZE || 1;
+  const occRate = Math.round((kActive / denom) * 100);
+
+  $('#kpi-total').textContent   = `Total bookings: ${kTotal}`;
+  $('#kpi-active').textContent  = `Active (Booked/Checked-in): ${kActive}`;
+  $('#kpi-cancel').textContent  = `Canceled: ${kCancel}`;
+  $('#kpi-occupancy').textContent = `Occupancy: ${occRate}%`;
+
+  // Top rooms：7 天
+  const byRoom = {};
+  in7d.filter(isActive).forEach(r => {
+    byRoom[r.room] = (byRoom[r.room]||0) + 1;
+  });
+  const top = Object.entries(byRoom).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxRoomVal = Math.max(1, ...top.map(x=>x[1]));
+  $('#topRooms').innerHTML = top.length ? top.map(([name,val])=>{
+    const w = Math.round(val / maxRoomVal * 100);
+    return `<div class="bar-row">
+      <div class="name">${name}</div>
+      <div class="bar-wrap"><div class="bar" style="width:${w}%"></div></div>
+      <div class="val">${val}</div>
+    </div>`;
+  }).join('') : '<div class="muted">No data in last 7 days.</div>';
+
+  // Latest 20 reservations（所有日期）
+  const tbody = document.querySelector('#statsTable tbody');
+  tbody.innerHTML = clean.slice(0,20).map(r=>{
+    const time = `${r.start}–${r.end}`;
+    return `<tr>
+      <td>${r.room}</td>
+      <td>${r.seat}</td>
+      <td>${r.date}</td>
+      <td>${time}</td>
+      <td>${r.status}</td>
+    </tr>`;
+  }).join('');
+
+  // Heatmap：7 天
+  const R = ['A','B','C','D','E','F','G','H'];
+  const C = [1,2,3,4,5,6,7,8];
+  const seatCount = {};
+  R.forEach(r=>C.forEach(c=> seatCount[`${r}${c}`]=0 ));
+  in7d.filter(isActive).forEach(r=>{
+    if (seatCount[r.seat]!=null) seatCount[r.seat]++;
+  });
+  const maxSeat = Math.max(1, ...Object.values(seatCount));
+  const grid = document.getElementById('heatGrid');
+  grid.innerHTML='';
+  R.forEach(r=>C.forEach(c=>{
+    const id = `${r}${c}`;
+    const v = seatCount[id];
+    const alpha = Math.max(.08, v/maxSeat);
+    const cell = document.createElement('div');
+    cell.className = 'heat';
+    cell.style.background = `rgba(37,99,235,${alpha})`;
+    cell.title = `${id}: ${v}`;
+    cell.textContent = id;
+    grid.appendChild(cell);
+  }));
+}
+
+// 进入 Stats：订阅事件 + 轮询
+function enterStats(){
+  renderStats({nocache:true});
+
+  const onChanged = () => renderStats({nocache:true});
+  bus.addEventListener('reservations:changed', onChanged);
+
+  const timer = setInterval(() => renderStats({nocache:true}), 15000);
+
+  leaveStats = () => {
+    bus.removeEventListener('reservations:changed', onChanged);
+    clearInterval(timer);
+    leaveStats = () => {};
+  };
+}
+
+/* ---------------- Boot ---------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  if(!location.hash) location.hash='#/login';
+  guardAndRender();
+});
+</script>
+
+<!-- Seat Lock Addon：保持独立，不影响上面的逻辑 -->
+<script type="module">
+import { seatAPI, getSeatStates, lockSeat, refreshLock, unlockSeat } from './seatLockClient.js';
+
+// 尝试优先使用 Smart Seat 登录用户的 id
+let current = null;
+try { current = JSON.parse(localStorage.getItem('SF_USER') || 'null'); } catch(e) {}
+const CURRENT_USER = (current && current.id) || localStorage.getItem('currentUserId') || 'demo-user';
+
+// 根据 seatLockServer 状态更新页面上带有 data-seat-id 的元素
+window.syncLocks = async function(roomId){
+  const states = await getSeatStates({roomId});
+  const byId = Object.fromEntries(states.map(s => [String(s.id), s]));
+  document.querySelectorAll('[data-seat-id]').forEach(btn => {
+    const s = byId[String(btn.dataset.seatId)];
+    const locked = s && s.lockedBy && s.holdUntil && (s.holdUntil > Date.now());
+    btn.disabled = !!locked && String(s.lockedBy) !== String(CURRENT_USER);
+    btn.title = locked
+      ? (String(s.lockedBy)===String(CURRENT_USER)
+          ? 'You hold this seat'
+          : 'Locked by another user')
+      : '';
+    btn.classList.toggle('locked', !!locked);
+  });
+};
+
+// 请求锁定某个 seatId
+window.holdSeat = async function(seatId, roomId){
+  try{
+    await lockSeat({seatId, roomId, userId: CURRENT_USER, ttlSeconds: 120});
+    if (window._lockTimer) clearInterval(window._lockTimer);
+    window._lockTimer = setInterval(
+      () => refreshLock({seatId, userId: CURRENT_USER, ttlSeconds:120}).catch(()=>{}),
+      30000
+    );
+  }catch(e){
+    if (e.code===409) alert('Seat is already locked.' + (e.detail? ' Remaining '+e.detail.remaining+'s':''));
+    else alert('Lock failed');
+  }
+  await window.syncLocks(roomId);
+};
+
+// 主动释放锁
+window.releaseSeat = async function(seatId){
+  try{ await unlockSeat({seatId, userId: CURRENT_USER}); }catch(e){}
+};
+
+// 定时刷新锁状态
+setInterval(()=>{
+  const roomEl = document.querySelector('[data-current-room-id]');
+  if (roomEl) window.syncLocks(roomEl.getAttribute('data-current-room-id'));
+}, 20000);
+</script>
+
+</body>
+</html>
