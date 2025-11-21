@@ -1,0 +1,272 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard · Smart Seat DB</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; background: #0b1220; color: #e5e7eb; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #0f172a; position: sticky; top: 0; }
+    header h1 { font-size: 18px; margin: 0; }
+    .container { padding: 16px; max-width: 1080px; margin: 0 auto; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    select, input, button, textarea { background: #0f172a; color: #e5e7eb; border: 1px solid #334155; border-radius: 10px; padding: 8px 10px; }
+    button.primary { background: #22c55e; color: #052e16; border: none; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border-bottom: 1px solid #1f2937; text-align: left; padding: 8px 6px; font-size: 12px; vertical-align: top; }
+    .muted { color: #94a3b8; font-size: 12px; }
+    .error { color: #fecaca; background: #7f1d1d; padding: 8px 12px; border-radius: 10px; margin-top: 10px; }
+    .ok { color: #dcfce7; background: #064e3b; padding: 8px 12px; border-radius: 10px; margin-top: 10px; }
+    textarea { width: 100%; min-height: 120px; }
+    .card { background: #0f172a; border: 1px solid #1f2937; border-radius: 16px; padding: 12px; }
+  </style>
+<style>
+/* =========================
+   Light/Dark Theme System (no JS)
+   放在页面最后一个 <style> 块
+========================= */
+
+/* 默认：浅色 */
+:root{
+  --bg:#f6f8fb; --card:#ffffff; --text:#0f172a; --muted:#51637a;
+  --primary:#2563eb; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#f1f5f9; --border:#dbe2ea; --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+
+/* 当勾选切换开关时，启用深色（纯 CSS，借助 :has ） */
+:root:has(#themeSwitch:checked){
+  --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+  --primary:#22c55e; --ok:#16a34a; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#0f172a; --border:#334155; --shadow:0 12px 30px rgba(0,0,0,.35);
+}
+
+/* ===== 通用元素的“变量化”覆盖（不改JS） ===== */
+html,body{ background:var(--bg)!important; color:var(--text)!important; }
+
+/* 顶栏 / 卡片 / 输入 / 表格 */
+header,.topbar{ background:color-mix(in srgb,var(--card) 88%, transparent); border-bottom:1px solid var(--border)!important; box-shadow:0 4px 12px rgba(15,23,42,.06); }
+.card{ background:var(--card)!important; border:1px solid var(--border)!important; box-shadow:var(--shadow)!important; color:var(--text)!important; }
+
+select, input, textarea, button{
+  background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; border-radius:10px;
+}
+button.primary, .btn{ background:var(--primary)!important; color:#fff!important; border:none!important; }
+.btn.secondary{ background:var(--card)!important; color:var(--text)!important; border:1px solid var(--border)!important; }
+.btn.ok{ background:var(--ok)!important; color:#fff!important; }
+.btn.warn{ background:var(--warn)!important; color:#111!important; }
+.btn.danger{ background:var(--danger)!important; color:#fff!important; }
+
+.muted, small, .status{ color:var(--muted)!important; }
+table{ width:100%; border-collapse:collapse; }
+th{ background:color-mix(in srgb,var(--chip) 80%, white); color:color-mix(in srgb,var(--text) 75%, #33506f); border-bottom:1px solid var(--border)!important; }
+td{ border-bottom:1px solid var(--border)!important; }
+
+/* 特定组件（座位网格等） */
+.seat-grid{ background:var(--card)!important; border:1px solid var(--border)!important; }
+.status{ background:var(--chip)!important; border:1px solid var(--border)!important; }
+.status.ok{ background:color-mix(in srgb,#e9f8ee 85%, var(--card)); color:#166534!important; border-color:#b5e2c5!important; }
+.status.cancel{ background:color-mix(in srgb,#fde6e6 85%, var(--card)); color:#7f1d1d!important; border-color:#f3c5c5!important; }
+
+/* 错误 / 成功提示 */
+.error{ color:#7f1d1d!important; background:#fde6e6!important; border:1px solid #f3c5c5!important; }
+.ok{ color:#166534!important; background:#e9f8ee!important; border:1px solid #b5e2c5!important; }
+
+/* 登录小卡片更紧凑 */
+#loginCard{ width:min(500px,92vw); }
+
+/* ===== 主题开关（纯 CSS，无JS） ===== */
+.theme-toggle-wrap{
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--border); padding:6px 10px; border-radius:999px;
+  box-shadow:var(--shadow);
+}
+.theme-toggle-label{ font-size:12px; color:var(--muted); }
+.theme-btn{
+  position:relative; width:44px; height:24px; border:1px solid var(--border);
+  border-radius:999px; background:var(--chip); cursor:pointer; display:inline-block;
+}
+.theme-btn::after{
+  content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius:50%; background:var(--primary); transition:transform .2s;
+}
+#themeSwitch:checked + .theme-btn::after{ transform:translateX(20px); }
+
+/* 让切换按钮在深色下也有微光 */
+:root:has(#themeSwitch:checked) .theme-btn{ box-shadow:0 0 0 3px rgba(34,197,94,.15) inset; }
+
+  /* Smart Seat logo 调整样式 */
+.logo {
+  height: 100px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+
+</style>
+
+
+
+</head>
+<body>
+  <header>
+    <h1><img src="assets/logo.png" alt="Smart Seat" class="logo"></h1>
+    <div class="row">
+      <span id="api" class="muted"></span>
+      
+<div class="theme-toggle-wrap">
+  <span class="theme-toggle-label">Theme</span>
+  <input id="themeSwitch" type="checkbox" hidden>
+  <label for="themeSwitch" class="theme-btn" aria-label="Toggle dark mode"></label>
+</div>
+
+<button id="logout">Logout</button>
+    </div>
+  </header>
+  <div class="container">
+    <div class="row">
+      <label>Collection</label>
+      <select id="collection">
+        <option>admins</option>
+        <option>users</option>
+        <option>reservations</option>
+        <option>reservationEvents</option>
+        <option>buildings</option>
+        <option>rooms</option>
+        <option>seats</option>
+      </select>
+      <button class="primary" id="refresh">Refresh</button>
+      <span id="msg" class="muted"></span>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3 style="margin:6px 0 8px;">Create / Update (JSON)</h3>
+      <p class="muted">POST to create; PUT / PATCH with an <code>id</code> to update. Use valid JSON only.</p>
+      <textarea id="json" placeholder='{"id":1,"name":"Example"}'></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="create" class="primary">POST /create</button>
+        <button id="put">PUT /replace</button>
+        <button id="patch">PATCH /merge</button>
+        <button id="delete">DELETE /by-id</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <h3 style="margin:6px 0 8px;">Results</h3>
+      <table id="table"></table>
+    </div>
+  </div>
+
+  <script>
+    const API = (localStorage.getItem('AUTH_API') || 'http://localhost:3000').replace(/\/+$/, '');
+    const token = localStorage.getItem('ADMIN_TOKEN');
+    const apiSpan = document.getElementById('api');
+    apiSpan.textContent = API;
+
+    if (!token) {
+      location.href = 'admin_login.html';
+    }
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+    }
+
+    const collectionSel = document.getElementById('collection');
+    const tableEl = document.getElementById('table');
+    const msg = document.getElementById('msg');
+    const ta = document.getElementById('json');
+
+    document.getElementById('logout').onclick = () => {
+      localStorage.removeItem('ADMIN_TOKEN');
+      location.href = 'admin_login.html';
+    };
+
+    async function refresh() {
+      const col = collectionSel.value;
+      msg.textContent = 'Loading ' + col + '…';
+      tableEl.innerHTML = '';
+      try {
+        const res = await fetch(API + '/' + col, { headers: authHeaders() });
+        const data = await res.json();
+        msg.textContent = Array.isArray(data) ? `${data.length} items` : '1 item';
+        renderTable(Array.isArray(data) ? data : [data]);
+      } catch (err) {
+        msg.className = 'error';
+        msg.textContent = err.message;
+      }
+    }
+
+    function renderTable(rows) {
+      if (!rows.length) {
+        tableEl.innerHTML = '<tr><td class="muted">No data</td></tr>';
+        return;
+      }
+      const cols = Array.from(rows.reduce((s, r) => {
+        Object.keys(r).forEach(k => s.add(k));
+        return s;
+      }, new Set()));
+      const thead = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+      const body = rows.map(r => '<tr>' + cols.map(c => `<td>${escapeHtml(JSON.stringify(r[c]))}</td>`).join('') + '</tr>').join('');
+      tableEl.innerHTML = thead + body;
+    }
+
+    function escapeHtml(s) {
+      return (s || '').toString().replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[m]));
+    }
+
+    document.getElementById('refresh').onclick = refresh;
+
+    document.getElementById('create').onclick = async () => {
+      await mutate('POST');
+    };
+    document.getElementById('put').onclick = async () => {
+      await mutate('PUT');
+    };
+    document.getElementById('patch').onclick = async () => {
+      await mutate('PATCH');
+    };
+    document.getElementById('delete').onclick = async () => {
+      const col = collectionSel.value;
+      try {
+        const obj = JSON.parse(ta.value);
+        if (!obj.id) throw new Error('Provide {"id": ...} to delete');
+        const res = await fetch(`${API}/${col}/${obj.id}`, { method: 'DELETE', headers: authHeaders() });
+        if (!res.ok) throw new Error('Delete failed');
+        msg.className = 'ok';
+        msg.textContent = 'Deleted id=' + obj.id;
+        refresh();
+      } catch (err) {
+        msg.className = 'error';
+        msg.textContent = err.message;
+      }
+    };
+
+    async function mutate(method) {
+      const col = collectionSel.value;
+      try {
+        const obj = JSON.parse(ta.value);
+        let url = API + '/' + col;
+        if ((method === 'PUT' || method === 'PATCH') && obj.id != null) {
+          url += '/' + obj.id;
+        }
+        const res = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(obj) });
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error(`HTTP ${res.status}: ${t}`);
+        }
+        msg.className = 'ok';
+        msg.textContent = method + ' OK';
+        refresh();
+      } catch (err) {
+        msg.className = 'error';
+        msg.textContent = err.message;
+      }
+    }
+
+    refresh();
+  </script>
+</body>
+</html>
